@@ -20,10 +20,10 @@ export default function Contact() {
 
           <div className="flex flex-col gap-4 sm:flex-row lg:justify-end">
             <a
-              href="mailto:contacto@tudominio.com"
+              href="#servicios"
               className="rounded-full bg-slate-950 px-8 py-4 text-center font-semibold text-white transition hover:bg-slate-800"
             >
-              Enviar correo
+              Explorar servicios
             </a>
 
             <a

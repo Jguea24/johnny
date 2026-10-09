@@ -37,6 +37,13 @@ export default function Navbar() {
             Proyectos
           </a>
 
+          <Link
+            href="/login"
+            className="text-sm text-slate-300 transition hover:text-cyan-400"
+          >
+            Iniciar sesión
+          </Link>
+
           <a
             href="#contacto"
             className="rounded-full bg-cyan-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
