@@ -47,20 +47,6 @@ const labelClass = "mb-1.5 block text-xs font-medium text-slate-300";
 const buttonClass =
   "inline-flex min-h-10 items-center justify-center rounded-lg border border-white/15 px-3 text-sm font-medium text-slate-200 transition hover:border-cyan-300/50 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-50";
 
-function useFilePreview(file: File | null): string | null {
-  const [preview, setPreview] = useState<{
-    file: File;
-    url: string;
-  } | null>(null);
-  useEffect(() => {
-    if (!file) return;
-    const objectUrl = URL.createObjectURL(file);
-    setPreview({ file, url: objectUrl });
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [file]);
-  return file && preview?.file === file ? preview.url : null;
-}
-
 function ResultMessage({ state }: { state: HeroActionState }) {
   if (!state.error && !state.success && !state.warning) return null;
   return (
@@ -82,23 +68,21 @@ function ResultMessage({ state }: { state: HeroActionState }) {
 
 function SlideMediaPreview({
   mediaType,
-  mediaFile,
+  mediaPreviewUrl,
   mediaUrl,
-  posterFile,
+  posterPreviewUrl,
   posterUrl,
   alt,
 }: {
   mediaType: HeroMediaType;
-  mediaFile: File | null;
+  mediaPreviewUrl: string | null;
   mediaUrl: string;
-  posterFile: File | null;
+  posterPreviewUrl: string | null;
   posterUrl: string | null;
   alt: string;
 }) {
-  const localMediaUrl = useFilePreview(mediaFile);
-  const localPosterUrl = useFilePreview(posterFile);
-  const src = localMediaUrl ?? mediaUrl;
-  const poster = localPosterUrl ?? posterUrl;
+  const src = mediaPreviewUrl ?? mediaUrl;
+  const poster = posterPreviewUrl ?? posterUrl;
 
   return (
     <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10 bg-slate-950">
@@ -160,6 +144,8 @@ function SlideEditor({
   );
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [posterFile, setPosterFile] = useState<File | null>(null);
+  const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string | null>(null);
+  const [posterPreviewUrl, setPosterPreviewUrl] = useState<string | null>(null);
   const [clearPoster, setClearPoster] = useState(false);
 
   useEffect(() => {
@@ -168,11 +154,29 @@ function SlideEditor({
     }
   }, [onSaved, slide, state]);
 
+  useEffect(
+    () => () => {
+      if (mediaPreviewUrl) URL.revokeObjectURL(mediaPreviewUrl);
+      if (posterPreviewUrl) URL.revokeObjectURL(posterPreviewUrl);
+    },
+    [mediaPreviewUrl, posterPreviewUrl],
+  );
+
   function updateDraft<Key extends keyof SlideDraft>(
     key: Key,
     value: SlideDraft[Key],
   ) {
     setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  function selectMediaFile(file: File | null) {
+    setMediaFile(file);
+    setMediaPreviewUrl(file ? URL.createObjectURL(file) : null);
+  }
+
+  function selectPosterFile(file: File | null) {
+    setPosterFile(file);
+    setPosterPreviewUrl(file ? URL.createObjectURL(file) : null);
   }
 
   return (
@@ -239,6 +243,8 @@ function SlideEditor({
               updateDraft("media_type", nextType);
               setMediaFile(null);
               setPosterFile(null);
+              setMediaPreviewUrl(null);
+              setPosterPreviewUrl(null);
               setClearPoster(nextType === "image");
             }}
             className={fieldClass}
@@ -266,7 +272,7 @@ function SlideEditor({
                 : "video/mp4,video/webm"
             }
             onChange={(event) =>
-              setMediaFile(event.currentTarget.files?.[0] ?? null)
+              selectMediaFile(event.currentTarget.files?.[0] ?? null)
             }
             className="block min-h-11 w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-2 text-xs text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-cyan-400 file:px-3 file:py-2 file:font-semibold file:text-slate-950"
           />
@@ -313,7 +319,7 @@ function SlideEditor({
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/avif"
                 onChange={(event) =>
-                  setPosterFile(event.currentTarget.files?.[0] ?? null)
+                  selectPosterFile(event.currentTarget.files?.[0] ?? null)
                 }
                 className="block min-h-11 w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-2 text-xs text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-cyan-400 file:px-3 file:py-2 file:font-semibold file:text-slate-950"
               />
@@ -404,11 +410,11 @@ function SlideEditor({
         <p className={labelClass}>Vista previa</p>
         <SlideMediaPreview
           mediaType={draft.media_type}
-          mediaFile={mediaFile}
+          mediaPreviewUrl={mediaPreviewUrl}
           mediaUrl={
             slide?.media_type === draft.media_type ? slide.media_url : ""
           }
-          posterFile={posterFile}
+          posterPreviewUrl={posterPreviewUrl}
           posterUrl={slide?.poster_url ?? null}
           alt={draft.alt_text}
         />
