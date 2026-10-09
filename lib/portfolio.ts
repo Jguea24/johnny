@@ -1,5 +1,6 @@
 import "server-only";
 
+import { io } from "next/cache";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
@@ -75,9 +76,20 @@ function emptyRecord<T>(
   return { status, data: null };
 }
 
-function logReadError(label: string, code: string | undefined) {
+function logReadError(
+  label: string,
+  error: { code?: string; status?: number; name?: string; message?: string },
+) {
+  const message = error.message?.toLowerCase() ?? "";
+  const messageType = message.includes("fetch failed")
+    ? "fetch-failed"
+    : message.includes("prerender") || message.includes("dynamic")
+      ? "render-control"
+      : message
+        ? "other"
+        : "empty";
   console.error(
-    `Unable to load public ${label}. Supabase code: ${code || "unknown"}`,
+    `Unable to load public ${label}. Supabase code: ${error.code || "unknown"}; status: ${error.status ?? "unknown"}; fields: ${Object.keys(error).sort().join(",") || "none"}; message type: ${messageType}`,
   );
 }
 
@@ -85,36 +97,24 @@ async function loadListing<T>(
   query: PromiseLike<{ data: T[] | null; error: { code?: string } | null }>,
   label: string,
 ): Promise<PublicListing<T>> {
-  try {
-    const { data, error } = await query;
-    if (error) {
-      logReadError(label, error.code);
-      return emptyListing("error");
-    }
-    return { status: "ready", data: data ?? [] };
-  } catch (error) {
-    logReadError(label, error instanceof Error ? error.name : undefined);
+  const { data, error } = await query;
+  if (error) {
+    logReadError(label, error);
     return emptyListing("error");
   }
+  return { status: "ready", data: data ?? [] };
 }
 
 async function loadRecord<T>(
   query: PromiseLike<{ data: T | null; error: { code?: string } | null }>,
   label: string,
 ): Promise<PublicRecord<T>> {
-  try {
-    const { data, error } = await query;
-    if (error) {
-      logReadError(label, error.code);
-      return emptyRecord("error");
-    }
-    return data
-      ? { status: "ready", data }
-      : emptyRecord("not-found");
-  } catch (error) {
-    logReadError(label, error instanceof Error ? error.name : undefined);
+  const { data, error } = await query;
+  if (error) {
+    logReadError(label, error);
     return emptyRecord("error");
   }
+  return data ? { status: "ready", data } : emptyRecord("not-found");
 }
 
 async function loadCategories(
@@ -123,23 +123,19 @@ async function loadCategories(
     error: { code?: string } | null;
   }>,
 ): Promise<PublicCategory[]> {
-  try {
-    const { data, error } = await query;
-    if (error) {
-      logReadError("categories", error.code);
-      return [];
-    }
-    return data ?? [];
-  } catch (error) {
-    logReadError("categories", error instanceof Error ? error.name : undefined);
+  const { data, error } = await query;
+  if (error) {
+    logReadError("categories", error);
     return [];
   }
+  return data ?? [];
 }
 
 export async function getPublicCategories(
   type: PublicCategory["type"],
 ): Promise<PublicCategory[]> {
   if (!getSupabaseConfig()) return [];
+  await io();
   const supabase = await createClient();
   return loadCategories(
     supabase.from("categories").select("id,name,type").eq("type", type),
@@ -150,6 +146,7 @@ export async function getPublicServices(): Promise<
   PublicListing<PublicService>
 > {
   if (!getSupabaseConfig()) return emptyListing("unconfigured");
+  await io();
   const supabase = await createClient();
   return loadListing(
     supabase
@@ -167,6 +164,7 @@ export async function getPublicService(
   slug: string,
 ): Promise<PublicRecord<PublicService>> {
   if (!getSupabaseConfig()) return emptyRecord("unconfigured");
+  await io();
   const supabase = await createClient();
   return loadRecord(
     supabase
@@ -185,6 +183,7 @@ export async function getPublicProjects(): Promise<
   PublicListing<PublicProject>
 > {
   if (!getSupabaseConfig()) return emptyListing("unconfigured");
+  await io();
   const supabase = await createClient();
   const projectsResult = await loadListing<PublicProjectFields>(
     supabase
@@ -243,6 +242,7 @@ export async function getPublicProject(
   slug: string,
 ): Promise<PublicRecord<PublicProject>> {
   if (!getSupabaseConfig()) return emptyRecord("unconfigured");
+  await io();
   const supabase = await createClient();
   const projectResult = await loadRecord<PublicProjectFields>(
     supabase
@@ -280,6 +280,7 @@ export async function getPublicTestimonials(): Promise<
   PublicListing<PublicTestimonial>
 > {
   if (!getSupabaseConfig()) return emptyListing("unconfigured");
+  await io();
   const supabase = await createClient();
   return loadListing(
     supabase

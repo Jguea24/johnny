@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getPublicCategories, getPublicProject } from "@/lib/portfolio";
 import { isValidSlug } from "@/lib/slug";
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ProjectDetailPage({ params }: PageProps) {
+async function ProjectDetailContent({ params }: PageProps) {
   const { slug } = await params;
   if (!isValidSlug(slug)) notFound();
   const result = await getPublicProject(slug);
@@ -154,5 +155,22 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         ) : null}
       </article>
     </main>
+  );
+}
+
+export default function ProjectDetailPage({ params }: PageProps) {
+  return (
+    <Suspense
+      fallback={
+        <main
+          className="min-h-screen bg-slate-950 px-6 py-24 text-center text-slate-300"
+          aria-busy="true"
+        >
+          Cargando proyecto…
+        </main>
+      }
+    >
+      <ProjectDetailContent params={params} />
+    </Suspense>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
+import { getPublicSiteSettings } from "@/lib/site-settings";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,19 +14,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Johnny | Soluciones Tecnológicas",
-  description:
-    "Portafolio profesional de Johnny. Desarrollo web, soluciones tecnológicas, seguridad TI, soporte técnico y capacitación.",
-  keywords: [
-    "desarrollo web",
-    "soluciones tecnológicas",
-    "seguridad informática",
-    "soporte técnico",
-    "software",
-    "tecnología",
-  ],
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getPublicSiteSettings();
+  return {
+    title: {
+      default: `${settings.title} | Soluciones Tecnológicas`,
+      template: `%s | ${settings.title}`,
+    },
+    description: settings.description,
+    keywords: [
+      "desarrollo web",
+      "soluciones tecnológicas",
+      "seguridad informática",
+      "soporte técnico",
+      "software",
+      "tecnología",
+    ],
+  };
+}
 
 export default function RootLayout({
   children,

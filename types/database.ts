@@ -19,6 +19,7 @@ export type ServiceRequestStatus =
 export type RequestPriority = "BAJA" | "NORMAL" | "ALTA" | "URGENTE";
 export type ContactMessageStatus = "NUEVO" | "LEIDO" | "RESPONDIDO" | "ARCHIVADO";
 export type TestimonialStatus = "DRAFT" | "ACTIVE" | "INACTIVE";
+export type HeroMediaType = "image" | "video";
 
 type Table<Row, Insert, Update = Partial<Insert>> = {
   Row: Row;
@@ -215,6 +216,54 @@ export type Database = {
           updated_at?: string;
         }
       >;
+      hero_slides: Table<
+        Timestamped & {
+          id: string;
+          title: string;
+          description: string;
+          media_type: HeroMediaType;
+          media_path: string;
+          alt_text: string | null;
+          poster_path: string | null;
+          cta_text: string | null;
+          cta_url: string | null;
+          sort_order: number;
+          is_active: boolean;
+        },
+        {
+          id?: string;
+          title: string;
+          description: string;
+          media_type: HeroMediaType;
+          media_path: string;
+          alt_text?: string | null;
+          poster_path?: string | null;
+          cta_text?: string | null;
+          cta_url?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        }
+      >;
+      hero_carousel_settings: Table<
+        {
+          id: number;
+          autoplay_enabled: boolean;
+          autoplay_interval_ms: number;
+          show_arrows: boolean;
+          show_indicators: boolean;
+          updated_at: string;
+        },
+        {
+          id?: number;
+          autoplay_enabled?: boolean;
+          autoplay_interval_ms?: number;
+          show_arrows?: boolean;
+          show_indicators?: boolean;
+          updated_at?: string;
+        }
+      >;
       site_settings: Table<
         { key: string; value: Json; updated_at: string; updated_by: string | null },
         { key: string; value: Json; updated_at?: string; updated_by?: string | null }
@@ -223,6 +272,10 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
+      reorder_hero_slide: {
+        Args: { p_slide_id: string; p_direction: string };
+        Returns: boolean;
+      };
     };
     Enums: {
       user_role: UserRole;

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getPublicCategories, getPublicService } from "@/lib/portfolio";
 import { isValidSlug } from "@/lib/slug";
+import ServiceRequestForm from "@/components/requests/ServiceRequestForm";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -17,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ServiceDetailPage({ params }: PageProps) {
+async function ServiceDetailContent({ params }: PageProps) {
   const { slug } = await params;
   if (!isValidSlug(slug)) notFound();
   const result = await getPublicService(slug);
@@ -90,19 +92,39 @@ export default async function ServiceDetailPage({ params }: PageProps) {
         <div className="mt-10 whitespace-pre-line leading-8 text-slate-300">
           {service.description}
         </div>
-        <div className="mt-12 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] p-6 sm:p-8">
+        <section
+          id="solicitar"
+          className="mt-12 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] p-6 sm:p-8"
+        >
           <h2 className="text-xl font-semibold">¿Te interesa este servicio?</h2>
           <p className="mt-2 text-slate-300">
-            Comparte lo que necesitas y conversemos sobre los siguientes pasos.
+            Envía una solicitud desde tu cuenta y podrás consultar su estado.
           </p>
-          <Link
-            href="/#contacto"
-            className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-cyan-400 px-5 font-semibold text-slate-950 transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          >
-            Solicitar información
-          </Link>
-        </div>
+          <div className="mt-7">
+            <ServiceRequestForm
+              serviceId={service.id}
+              serviceTitle={service.title}
+            />
+          </div>
+        </section>
       </article>
     </main>
+  );
+}
+
+export default function ServiceDetailPage({ params }: PageProps) {
+  return (
+    <Suspense
+      fallback={
+        <main
+          className="min-h-screen bg-slate-950 px-6 py-24 text-center text-slate-300"
+          aria-busy="true"
+        >
+          Cargando servicio…
+        </main>
+      }
+    >
+      <ServiceDetailContent params={params} />
+    </Suspense>
   );
 }

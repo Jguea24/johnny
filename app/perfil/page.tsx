@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { io } from "next/cache";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import ProfileForm from "@/components/auth/ProfileForm";
@@ -12,7 +13,15 @@ export const metadata: Metadata = {
   description: "Consulta y actualiza la información de tu perfil.",
 };
 
-async function ProfileContent() {
+async function ProfileContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string | string[] }>;
+}) {
+  await io();
+
+  const { error: searchError } = await searchParams;
+  const errorCode = typeof searchError === "string" ? searchError : null;
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } =
     await supabase.auth.getClaims();
@@ -72,6 +81,23 @@ async function ProfileContent() {
           </form>
         </header>
         <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-6 sm:p-8">
+          {errorCode === "forbidden" ? (
+            <p
+              className="mb-6 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+              role="alert"
+            >
+              Tu cuenta no tiene permisos para acceder al panel administrativo.
+            </p>
+          ) : null}
+          {errorCode === "role" ? (
+            <p
+              className="mb-6 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+              role="alert"
+            >
+              Iniciaste sesión, pero no fue posible verificar tu rol. El acceso
+              administrativo permanece bloqueado; inténtalo de nuevo más tarde.
+            </p>
+          ) : null}
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6">
             <div>
               <p className="text-sm text-slate-400">Correo de la cuenta</p>
@@ -92,7 +118,11 @@ async function ProfileContent() {
   );
 }
 
-export default function ProfilePage() {
+export default function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string | string[] }>;
+}) {
   return (
     <Suspense
       fallback={
@@ -104,7 +134,7 @@ export default function ProfilePage() {
         </main>
       }
     >
-      <ProfileContent />
+      <ProfileContent searchParams={searchParams} />
     </Suspense>
   );
 }

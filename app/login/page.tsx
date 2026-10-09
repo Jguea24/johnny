@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import AuthCard from "@/components/auth/AuthCard";
 import { LoginForm } from "@/components/auth/AuthForms";
+import { getAuthenticatedProfileRole } from "@/lib/auth/identity";
+import {
+  getAuthenticatedDestination,
+  getSafeNextPath,
+} from "@/lib/auth/redirects";
 
 export const metadata: Metadata = {
   title: "Iniciar sesión",
@@ -17,14 +23,20 @@ async function LoginContent({
   }>;
 }) {
   const { next, error } = await searchParams;
-  const callbackFailed = error === "callback";
+  const identity = await getAuthenticatedProfileRole();
+  const nextPath = getSafeNextPath(typeof next === "string" ? next : null);
+  if (identity.status === "authenticated") {
+    redirect(getAuthenticatedDestination(identity.role, nextPath));
+  }
+
+  const errorCode = typeof error === "string" ? error : null;
   return (
     <AuthCard
       eyebrow="Tu espacio"
       title="Iniciar sesión"
       description="Accede a tu perfil y consulta tu información."
     >
-      {callbackFailed ? (
+      {errorCode === "callback" ? (
         <p
           className="mb-5 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
           role="alert"
@@ -33,7 +45,46 @@ async function LoginContent({
           sesión.
         </p>
       ) : null}
-      <LoginForm nextPath={typeof next === "string" ? next : undefined} />
+      {errorCode === "auth-required" ? (
+        <p
+          className="mb-5 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-100"
+          role="status"
+        >
+          Inicia sesión para acceder al panel administrativo.
+        </p>
+      ) : null}
+      {errorCode === "role" ||
+      errorCode === "profile" ||
+      identity.status === "profile-missing" ||
+      identity.status === "profile-error" ? (
+        <p
+          className="mb-5 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+          role="alert"
+        >
+          No se pudo comprobar el perfil o el rol de tu cuenta. Comprueba que
+          tu perfil exista y vuelve a intentarlo.
+        </p>
+      ) : null}
+      {errorCode === "session" ||
+      identity.status === "claims-error" ? (
+        <p
+          className="mb-5 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+          role="alert"
+        >
+          No se pudo verificar la sesión. Inténtalo nuevamente más tarde.
+        </p>
+      ) : null}
+      {errorCode === "connection" ||
+      identity.status === "connection-error" ? (
+        <p
+          className="mb-5 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+          role="alert"
+        >
+          El servicio de autenticación no está disponible temporalmente.
+          Inténtalo más tarde.
+        </p>
+      ) : null}
+      <LoginForm nextPath={nextPath ?? undefined} />
     </AuthCard>
   );
 }

@@ -59,10 +59,17 @@ function FormField({
   );
 }
 
-function SubmitButton({ children }: { children: string }) {
+function SubmitButton({
+  children,
+  disabled,
+}: {
+  children: string;
+  disabled: boolean;
+}) {
   return (
     <button
       type="submit"
+      disabled={disabled}
       className="min-h-12 w-full rounded-xl bg-cyan-400 px-5 font-semibold text-slate-950 transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-60"
     >
       {children}
@@ -70,11 +77,11 @@ function SubmitButton({ children }: { children: string }) {
   );
 }
 
-export function LoginForm({ nextPath = "/perfil" }: { nextPath?: string }) {
+export function LoginForm({ nextPath }: { nextPath?: string }) {
   const [state, action, pending] = useActionState(signInAction, initialState);
   return (
     <form action={action} className="space-y-5">
-      <input type="hidden" name="next" value={nextPath} />
+      {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
       <FormField id="email" label="Correo electrónico" type="email" autoComplete="email" />
       <FormField
         id="password"
@@ -83,7 +90,7 @@ export function LoginForm({ nextPath = "/perfil" }: { nextPath?: string }) {
         autoComplete="current-password"
       />
       <FormFeedback state={state} />
-      <SubmitButton>
+      <SubmitButton disabled={pending}>
         {pending ? "Iniciando sesión…" : "Iniciar sesión"}
       </SubmitButton>
       <div className="flex flex-wrap justify-between gap-3 text-sm">
@@ -120,7 +127,7 @@ export function RegistrationForm() {
         autoComplete="new-password"
       />
       <FormFeedback state={state} />
-      <SubmitButton>
+      <SubmitButton disabled={pending}>
         {pending ? "Creando cuenta…" : "Crear cuenta"}
       </SubmitButton>
       <p className="text-center text-sm text-slate-400">
@@ -142,7 +149,7 @@ export function PasswordRecoveryForm() {
     <form action={action} className="space-y-5">
       <FormField id="email" label="Correo electrónico" type="email" autoComplete="email" />
       <FormFeedback state={state} />
-      <SubmitButton>
+      <SubmitButton disabled={pending}>
         {pending ? "Enviando solicitud…" : "Enviar enlace de recuperación"}
       </SubmitButton>
       <Link href="/login" className="block text-center text-sm text-cyan-300 hover:text-cyan-200">
@@ -166,7 +173,7 @@ export function SetNewPasswordForm() {
         autoComplete="new-password"
       />
       <FormFeedback state={state} />
-      <SubmitButton>
+      <SubmitButton disabled={pending}>
         {pending ? "Actualizando contraseña…" : "Guardar contraseña nueva"}
       </SubmitButton>
     </form>
