@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { Viewport } from "next";
 import { getPublicSiteSettings } from "@/lib/site-settings";
 import PwaControls from "@/components/pwa/PwaControls";
+import WhatsAppButton from "@/components/contact/WhatsAppButton";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -71,6 +73,9 @@ export default function RootLayout({
       <body className="min-h-screen">
         {children}
         <PwaControls />
+        <Suspense fallback={null}>
+          <WhatsAppButton />
+        </Suspense>
       </body>
     </html>
   );

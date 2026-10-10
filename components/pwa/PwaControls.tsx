@@ -154,7 +154,7 @@ export default function PwaControls() {
 
   return (
     <aside
-      className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] z-[60] flex max-w-[calc(100vw-2rem)] flex-col items-end gap-2"
+      className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[calc(1rem+env(safe-area-inset-left))] z-[60] flex max-w-[calc(100vw-2rem)] flex-col items-start gap-2"
       aria-label="Estado de la aplicación"
     >
       {isOffline ? (

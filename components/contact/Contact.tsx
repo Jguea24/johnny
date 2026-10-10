@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import ContactForm from "@/components/contact/ContactForm";
 import { getContactFormAvailability } from "@/lib/contact/server";
 import type { PublicSiteSettings } from "@/lib/site-settings";
+import { WhatsAppLink } from "@/components/contact/WhatsAppButton";
 
 export default function Contact({
   settings,
@@ -52,6 +53,9 @@ export default function Contact({
           >
             Explorar servicios <span className="ml-2" aria-hidden="true">→</span>
           </a>
+          <div className="mt-3">
+            <WhatsAppLink className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 font-semibold text-emerald-200 transition-colors hover:bg-emerald-400/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300" />
+          </div>
         </div>
         <div className="min-w-0 rounded-2xl border border-white/10 bg-slate-950 p-4 sm:p-8">
           <h3 className="text-xl font-semibold text-white">Envíame un mensaje</h3>

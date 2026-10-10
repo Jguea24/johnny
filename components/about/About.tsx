@@ -14,7 +14,7 @@ function SafeProfileLinks({ member }: { member: PublicTeamMember }) {
   if (!linkedinUrl && !websiteUrl) return null;
 
   return (
-    <nav aria-label={`Enlaces profesionales de ${member.full_name}`} className="mt-5 flex flex-wrap gap-4">
+    <nav aria-label={`Enlaces profesionales de ${member.full_name}`} className="mt-3 flex flex-wrap gap-3">
       {linkedinUrl ? (
         <a
           href={linkedinUrl}
@@ -51,21 +51,31 @@ function safeHttpsUrl(value: string | null): string | null {
 
 function ProfilePhoto({
   member,
+  founder = false,
 }: {
   member: PublicTeamMember;
+  founder?: boolean;
 }) {
   if (!member.avatar_url) return null;
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-950">
+    <div
+      className={`relative w-full overflow-hidden bg-slate-800 ${
+        founder
+          ? "aspect-[4/3] md:aspect-auto md:min-h-64"
+          : "aspect-[4/3]"
+      }`}
+    >
       <Image
         src={member.avatar_url}
         alt={`Fotografía de ${member.full_name}`}
         fill
         unoptimized
         sizes={
-          "(max-width: 640px) 100vw, (max-width: 1279px) 50vw, 33vw"
+          founder
+            ? "(max-width: 767px) 100vw, 35vw"
+            : "(max-width: 640px) 100vw, (max-width: 1279px) 50vw, 33vw"
         }
-        className="object-cover"
+        className="object-contain object-center"
       />
     </div>
   );
@@ -80,32 +90,44 @@ function ProfileCard({
 }) {
   return (
     <article
-      className={`flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border bg-slate-950/70 shadow-lg shadow-slate-950/20 ${
+      className={`mx-auto min-w-0 overflow-hidden rounded-2xl border bg-slate-950/70 shadow-md shadow-slate-950/20 ${
         founder
-          ? "border-cyan-300/30 shadow-cyan-950/20"
-          : "border-white/10"
+          ? "grid w-full max-w-4xl grid-cols-1 border-cyan-300/30 shadow-cyan-950/20 md:grid-cols-[minmax(13rem,0.36fr)_minmax(0,0.64fr)]"
+          : "flex h-full w-full max-w-[360px] flex-col border-white/10"
       }`}
     >
-      <ProfilePhoto member={member} />
-      <div className="flex flex-1 flex-col p-5 sm:p-6">
-        <p className="min-h-5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">
+      <ProfilePhoto member={member} founder={founder} />
+      <div className={`flex min-w-0 flex-col p-4 ${founder ? "sm:p-6 md:justify-center" : "flex-1"}`}>
+        <p className="min-h-4 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-cyan-300">
           {founder ? "Fundador" : member.is_featured ? "Colaborador destacado" : ""}
         </p>
-        <h3 className="mt-2 max-w-[24ch] break-words text-xl font-semibold leading-snug text-white">
+        <h3 className="mt-1.5 max-w-[24ch] break-words text-lg font-semibold leading-snug text-white">
           {member.full_name}
         </h3>
-        <p className="mt-2 max-w-[34ch] break-words text-sm font-medium leading-6 text-cyan-100">
-          {founder ? "Fundador y líder tecnológico" : member.position}
+        <p className="mt-1.5 max-w-[34ch] break-words text-sm font-medium leading-5 text-cyan-100">
+          {founder
+            ? "Fundador y CEO · Líder tecnológico"
+            : member.position}
         </p>
         {!founder ? (
-          <p className="mt-2 max-w-[34ch] break-words text-sm font-semibold leading-6 text-slate-200">
+          <p className="mt-1.5 max-w-[34ch] break-words text-sm font-semibold leading-5 text-slate-200">
             {member.specialty}
           </p>
         ) : null}
-        <p className="mt-3 max-w-[42ch] whitespace-pre-line break-words text-sm leading-6 text-slate-400">
-          {member.bio}
-        </p>
-        <div className="mt-auto pt-2">
+        <details className="group mt-2 max-w-[42ch]">
+          <summary className="cursor-pointer list-none break-words text-sm leading-5 text-slate-400 outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
+            <span className="line-clamp-3 whitespace-pre-line">
+              {member.bio}
+            </span>
+            <span className="mt-1 inline-block text-xs font-medium text-cyan-300 group-open:hidden">
+              Leer descripción completa
+            </span>
+          </summary>
+          <p className="mt-2 whitespace-pre-line break-words text-sm leading-5 text-slate-400">
+            {member.bio}
+          </p>
+        </details>
+        <div className="mt-auto pt-1">
           <SafeProfileLinks member={member} />
         </div>
       </div>
@@ -180,33 +202,64 @@ export default function About({
           </p>
         ) : (
           <div className="mt-9">
-            <h3 className="sr-only">Fundador y colaboradores</h3>
-            {!team.founder ? (
-              <p
-                className="mb-5 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm text-slate-400"
-                role="status"
+            <section
+              aria-labelledby="founder-heading"
+              className="flex flex-col items-center"
+            >
+              <h3
+                id="founder-heading"
+                className="mb-4 text-center text-lg font-semibold text-white"
               >
-                El perfil del fundador se publicará cuando esté completo y
-                cuente con una fotografía.
-              </p>
-            ) : null}
-            {team.collaborators.length === 0 ? (
-              <p
-                className="mb-5 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm text-slate-400"
-                role="status"
-              >
-                Los perfiles de colaboradores aparecerán aquí cuando estén
-                completos y publicados.
-              </p>
-            ) : null}
-            <div className="grid min-w-0 auto-rows-fr gap-5 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
+                Fundador y CEO
+              </h3>
               {team.founder ? (
-                <ProfileCard key={team.founder.id} member={team.founder} founder />
-              ) : null}
-              {team.collaborators.map((member) => (
-                <ProfileCard key={member.id} member={member} />
-              ))}
-            </div>
+                <ProfileCard
+                  key={team.founder.id}
+                  member={team.founder}
+                  founder
+                />
+              ) : (
+                <p
+                  className="w-full max-w-md rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm text-slate-400"
+                  role="status"
+                >
+                  El perfil del fundador se publicará cuando esté completo y
+                  cuente con una fotografía.
+                </p>
+              )}
+            </section>
+
+            <section
+              aria-labelledby="collaborators-heading"
+              className="mt-10 border-t border-white/10 pt-8 sm:mt-12 sm:pt-10"
+            >
+              <header className="mb-5 text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-400">
+                  Colaboradores
+                </p>
+                <h3
+                  id="collaborators-heading"
+                  className="mt-2 text-2xl font-semibold text-white"
+                >
+                  Nuestro equipo
+                </h3>
+              </header>
+              {team.collaborators.length > 0 ? (
+                <div className="mx-auto grid w-full max-w-6xl min-w-0 gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {team.collaborators.map((member) => (
+                    <ProfileCard key={member.id} member={member} />
+                  ))}
+                </div>
+              ) : (
+                <p
+                  className="mx-auto max-w-xl rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm text-slate-400"
+                  role="status"
+                >
+                  Los perfiles de colaboradores aparecerán aquí cuando estén
+                  completos y publicados.
+                </p>
+              )}
+            </section>
           </div>
         )}
       </div>
