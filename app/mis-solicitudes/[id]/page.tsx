@@ -32,7 +32,7 @@ async function RequestDetailContent({ params }: PageProps) {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-slate-950 px-6 py-16 text-white">
+      <main className="min-h-screen bg-slate-950 px-4 py-12 text-white sm:px-6 sm:py-16">
         <div className="mx-auto max-w-3xl rounded-2xl border border-rose-400/30 bg-rose-400/10 p-6">
           <h1 className="text-xl font-semibold">No fue posible cargar la solicitud</h1>
           <p className="mt-2 text-rose-100" role="alert">
@@ -57,7 +57,7 @@ async function RequestDetailContent({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-16 text-white">
+    <main className="min-h-screen bg-slate-950 px-4 py-12 text-white sm:px-6 sm:py-16">
       <article className="mx-auto max-w-3xl">
         <Link
           href="/mis-solicitudes"
@@ -76,7 +76,7 @@ async function RequestDetailContent({ params }: PageProps) {
             {requestStatusLabels[request.status]}
           </span>
         </header>
-        <section className="mt-8 space-y-6 rounded-2xl border border-white/10 bg-white/[0.04] p-6 sm:p-8">
+        <section className="mt-8 space-y-6 rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-8">
           {serviceTitle ? (
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -99,7 +99,7 @@ async function RequestDetailContent({ params }: PageProps) {
                 Contacto
               </dt>
               <dd className="mt-1 text-slate-200">{request.name}</dd>
-              <dd className="text-slate-400">{request.email}</dd>
+              <dd className="break-all text-slate-400">{request.email}</dd>
             </div>
             {request.phone || request.company ? (
               <div>
@@ -141,7 +141,7 @@ export default function MyRequestDetailPage({ params }: PageProps) {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-slate-950 px-6 py-24 text-center text-slate-300" aria-busy="true">
+        <main         className="min-h-screen bg-slate-950 px-4 py-16 text-center text-slate-300 sm:px-6 sm:py-24" aria-busy="true">
           Cargando solicitud…
         </main>
       }

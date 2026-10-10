@@ -1,5 +1,6 @@
 import type { PublicProject } from "@/components/portfolio/PortfolioContent";
 import Link from "next/link";
+import Image from "next/image";
 
 type Listing<T> =
   | { status: "ready"; data: T[] }
@@ -19,7 +20,7 @@ export default function Projects({
       id="proyectos"
       className="border-t border-white/10 bg-slate-900"
     >
-      <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
 
         {/* ENCABEZADO */}
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
@@ -28,7 +29,7 @@ export default function Projects({
               Portafolio
             </p>
 
-            <h2 className="mt-4 text-4xl font-bold sm:text-5xl">
+            <h2 className="mt-4 text-[clamp(2rem,5vw,3rem)] font-bold">
               Proyectos destacados.
             </h2>
           </div>
@@ -46,25 +47,23 @@ export default function Projects({
                 key={project.id}
                 className="group overflow-hidden rounded-2xl border border-white/10 bg-slate-950 transition duration-300 hover:-translate-y-1 hover:border-cyan-400/50 motion-reduce:transform-none motion-reduce:transition-none"
               >
-                <div
-                  role={project.main_image ? "img" : undefined}
-                  aria-label={project.main_image ? project.title : undefined}
-                  className="flex h-52 items-center justify-center bg-gradient-to-br from-cyan-950 to-slate-900 bg-cover bg-center"
-                  style={
-                    project.main_image
-                      ? {
-                          backgroundImage: `url("${project.main_image.replaceAll('"', "%22")}")`,
-                        }
-                      : undefined
-                  }
-                >
-                  {!project.main_image ? (
+                <div className="relative flex aspect-[16/10] items-center justify-center bg-gradient-to-br from-cyan-950 to-slate-900">
+                  {project.main_image ? (
+                    <Image
+                      src={project.main_image}
+                      alt={project.title}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                      className="object-cover"
+                    />
+                  ) : (
                     <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 transition duration-300 group-hover:scale-110 motion-reduce:transform-none motion-reduce:transition-none">
                       <span aria-hidden="true" className="text-4xl">
                         ◇
                       </span>
                     </div>
-                  ) : null}
+                  )}
                 </div>
 
                 <div className="p-6">
@@ -126,7 +125,7 @@ export default function Projects({
                       ) : null}
                       <Link
                         href={`/proyectos/${encodeURIComponent(project.slug)}`}
-                        className="mt-6 inline-block font-semibold text-cyan-300 transition hover:text-cyan-200"
+                        className="inline-flex min-h-11 items-center font-semibold text-cyan-300 transition hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
                       >
                         Ver proyecto <span aria-hidden="true">→</span>
                       </Link>
@@ -170,4 +169,3 @@ export default function Projects({
     </section>
   );
 }
-

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import CatalogFilters from "@/components/catalog/CatalogFilters";
 import type { PublicCategory, PublicListing, PublicService } from "@/lib/portfolio";
 
@@ -51,14 +52,16 @@ export default function ServiceCatalog({
                 >
                   <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-cyan-500/10 text-3xl text-cyan-200">
                     {service.image_url ? (
-                      <div
-                        role="img"
-                        aria-label={service.title}
-                        className="h-full w-full bg-cover bg-center"
-                        style={{
-                          backgroundImage: `url("${service.image_url.replaceAll('"', "%22")}")`,
-                        }}
-                      />
+                      <div className="relative h-full w-full">
+                        <Image
+                          src={service.image_url}
+                          alt={service.title}
+                          fill
+                          unoptimized
+                          sizes="3.5rem"
+                          className="object-cover"
+                        />
+                      </div>
                     ) : (
                       <span aria-hidden="true">{service.icon || "◇"}</span>
                     )}
@@ -85,7 +88,7 @@ export default function ServiceCatalog({
                   ) : null}
                   <Link
                     href={`/servicios/${encodeURIComponent(service.slug)}`}
-                    className="mt-6 inline-block rounded-sm font-semibold text-cyan-300 outline-none hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-300"
+                    className="mt-4 inline-flex min-h-11 items-center rounded-sm font-semibold text-cyan-300 outline-none hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-300"
                   >
                     Ver detalles <span aria-hidden="true">→</span>
                   </Link>

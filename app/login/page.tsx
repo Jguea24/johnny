@@ -100,7 +100,7 @@ export default function LoginPage({
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-slate-950 px-6 py-24 text-center text-slate-300">
+        <main className="min-h-screen bg-slate-950 px-4 py-16 text-center text-slate-300 sm:px-6 sm:py-24">
           Cargando acceso…
         </main>
       }

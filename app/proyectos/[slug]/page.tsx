@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
@@ -25,8 +26,8 @@ async function ProjectDetailContent({ params }: PageProps) {
   if (result.status === "not-found") notFound();
   if (result.status !== "ready") {
     return (
-      <main className="min-h-screen bg-slate-950 px-6 py-24 text-white">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-white/10 bg-white/[0.03] p-8">
+      <main className="min-h-screen bg-slate-950 px-4 py-16 text-white sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-8">
           <h1 className="text-2xl font-semibold">Proyecto no disponible</h1>
           <p className="mt-3 text-slate-300" role="alert">
             No fue posible consultar este proyecto en este momento. Inténtalo
@@ -34,7 +35,7 @@ async function ProjectDetailContent({ params }: PageProps) {
           </p>
           <Link
             href="/proyectos"
-            className="mt-6 inline-block font-semibold text-cyan-300 hover:text-cyan-200"
+            className="mt-6 inline-flex min-h-11 items-center font-semibold text-cyan-300 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
           >
             ← Volver a proyectos
           </Link>
@@ -52,22 +53,24 @@ async function ProjectDetailContent({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <article className="mx-auto max-w-5xl px-6 py-16 lg:px-8">
+      <article className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <Link
           href="/proyectos"
-          className="rounded-sm text-sm font-medium text-cyan-300 outline-none hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-300"
+          className="inline-flex min-h-11 items-center rounded-sm text-sm font-medium text-cyan-300 outline-none hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-300"
         >
           ← Todos los proyectos
         </Link>
         {project.main_image ? (
-          <div
-            role="img"
-            aria-label={project.title}
-            className="mt-8 h-64 rounded-2xl border border-white/10 bg-cover bg-center sm:h-[26rem]"
-            style={{
-              backgroundImage: `url("${project.main_image.replaceAll('"', "%22")}")`,
-            }}
-          />
+          <div className="relative mt-8 aspect-[16/10] overflow-hidden rounded-2xl border border-white/10 sm:aspect-[16/9]">
+            <Image
+              src={project.main_image}
+              alt={project.title}
+              fill
+              unoptimized
+              sizes="(max-width: 768px) 100vw, 64rem"
+              className="object-cover"
+            />
+          </div>
         ) : null}
         <header className="mt-10">
           <div className="flex flex-wrap items-center gap-3">
@@ -82,7 +85,7 @@ async function ProjectDetailContent({ params }: PageProps) {
               </span>
             ) : null}
           </div>
-          <h1 className="mt-4 text-4xl font-bold sm:text-5xl">
+          <h1 className="mt-4 break-words text-[clamp(2rem,5vw,3rem)] font-bold">
             {project.title}
           </h1>
           <p className="mt-5 text-xl leading-8 text-slate-300">
@@ -142,13 +145,17 @@ async function ProjectDetailContent({ params }: PageProps) {
               {gallery.map((image) => (
                 <div
                   key={image.id}
-                  role="img"
-                  aria-label={image.alt_text || project.title}
-                  className="h-56 rounded-xl border border-white/10 bg-cover bg-center"
-                  style={{
-                    backgroundImage: `url("${image.image_url.replaceAll('"', "%22")}")`,
-                  }}
-                />
+                  className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10"
+                >
+                  <Image
+                    src={image.image_url}
+                    alt={image.alt_text || project.title}
+                    fill
+                    unoptimized
+                    sizes="(max-width: 640px) 100vw, 50vw"
+                    className="object-cover"
+                  />
+                </div>
               ))}
             </div>
           </section>
@@ -163,7 +170,7 @@ export default function ProjectDetailPage({ params }: PageProps) {
     <Suspense
       fallback={
         <main
-          className="min-h-screen bg-slate-950 px-6 py-24 text-center text-slate-300"
+          className="min-h-screen bg-slate-950 px-4 py-16 text-center text-slate-300 sm:px-6 sm:py-24"
           aria-busy="true"
         >
           Cargando proyecto…

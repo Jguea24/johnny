@@ -74,8 +74,8 @@ export default function ContactForm({
           className="rounded-xl border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100"
           role="status"
         >
-          El formulario estará disponible cuando se complete la configuración
-          segura del servicio.
+          El formulario no está disponible porque falta completar la
+          configuración segura del servicio.
         </p>
       )}
       <div className="grid gap-5 sm:grid-cols-2">

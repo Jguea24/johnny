@@ -24,7 +24,7 @@ async function RequestsContent() {
     .limit(100);
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-16 text-white">
+    <main className="min-h-screen bg-slate-950 px-4 py-12 text-white sm:px-6 sm:py-16">
       <div className="mx-auto max-w-5xl">
         <Link href="/perfil" className="text-sm text-cyan-300 hover:text-cyan-200">
           ← Mi perfil
@@ -67,10 +67,9 @@ async function RequestsContent() {
                     <p className="text-xs uppercase tracking-wide text-slate-500">
                       Solicitud · {formatRequestDate(request.created_at)}
                     </p>
-                    <h2 className="mt-2 text-lg font-semibold text-white">
-                      {request.description.slice(0, 120)}
-                      {request.description.length > 120 ? "…" : ""}
-                    </h2>
+                    <p className="mt-2 whitespace-pre-line break-words text-lg font-semibold text-white">
+                      {request.description}
+                    </p>
                   </div>
                   <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-sm font-medium text-cyan-100">
                     {requestStatusLabels[request.status]}

@@ -331,10 +331,10 @@ export default function Hero({
       <div className="pointer-events-none absolute -right-40 top-1/4 h-96 w-96 rounded-full border border-cyan-400/10" />
       <div className="pointer-events-none absolute -right-24 top-[30%] h-64 w-64 rounded-full border border-cyan-400/[0.07]" />
 
-      <div className="relative mx-auto flex min-h-[calc(100svh-5rem)] w-full max-w-7xl flex-col justify-center px-6 pb-14 pt-28 sm:px-8 lg:px-10 lg:pb-16">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.02fr_0.98fr] lg:gap-12">
-          <div className="order-2 min-w-0 lg:order-1">
-            <p className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300 sm:text-sm">
+      <div className="relative mx-auto flex min-h-[calc(100svh-5rem)] w-full max-w-7xl flex-col justify-center px-4 pb-12 pt-28 sm:px-6 sm:pb-14 lg:px-10 lg:pb-16">
+        <div className="grid min-w-0 items-center gap-8 sm:gap-10 lg:grid-cols-[1.02fr_0.98fr] lg:gap-10 xl:gap-12">
+          <div className="order-1 min-w-0 lg:order-1">
+            <p className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300 sm:text-sm sm:tracking-[0.24em]">
               <span className="h-px w-8 bg-cyan-400" />
               Soluciones tecnológicas
             </p>
@@ -343,7 +343,7 @@ export default function Hero({
                 Mostrando la presentación principal.
               </p>
             ) : null}
-            <div className="relative min-h-[15rem] sm:min-h-[14rem] lg:min-h-[17rem]">
+            <div className="grid min-w-0">
               {slides.map((slide, index) => (
                 <article
                   key={slide.id}
@@ -351,55 +351,55 @@ export default function Hero({
                   aria-roledescription="diapositiva"
                   aria-label={`${index + 1} de ${slides.length}: ${slide.title}`}
                   inert={index !== activeIndex}
-                  className={`absolute inset-0 transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none ${
+                  className={`col-start-1 row-start-1 flex min-w-0 flex-col items-start self-start transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none ${
                     index === activeIndex
                       ? "translate-y-0 opacity-100"
                       : "pointer-events-none translate-y-3 opacity-0"
                   }`}
                 >
-                  <h1 className="max-w-2xl text-4xl font-bold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-7xl">
+                  <h1 className="w-full max-w-2xl break-words text-4xl font-bold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-5xl xl:text-6xl 2xl:text-7xl">
                     {slide.title}
                   </h1>
-                  <p className="mt-5 max-w-xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
+                  <p className="mt-5 w-full max-w-xl break-words text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
                     {slide.description}
                   </p>
+                  {slide.cta_text && slide.cta_url ? (
+                    <div className="mt-7 flex w-full min-w-0 flex-wrap gap-3 sm:w-auto">
+                      {slide.cta_url.startsWith("/") ? (
+                        <Link
+                          href={slide.cta_url}
+                          className="inline-flex min-h-12 w-full max-w-full items-center justify-center gap-2 rounded-full bg-cyan-400 px-6 py-3 text-center font-semibold text-slate-950 transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 motion-reduce:transition-none sm:w-auto"
+                        >
+                          <span className="break-words">{slide.cta_text}</span>
+                          <span aria-hidden="true">→</span>
+                        </Link>
+                      ) : (
+                        <a
+                          href={slide.cta_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex min-h-12 w-full max-w-full items-center justify-center gap-2 rounded-full bg-cyan-400 px-6 py-3 text-center font-semibold text-slate-950 transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 motion-reduce:transition-none sm:w-auto"
+                        >
+                          <span className="break-words">{slide.cta_text}</span>
+                          <span aria-hidden="true">↗</span>
+                        </a>
+                      )}
+                      {!hasPublishedSlides ? (
+                        <Link
+                          href="/#proyectos"
+                          className="inline-flex min-h-12 w-full max-w-full items-center justify-center rounded-full border border-white/20 px-6 py-3 text-center font-semibold text-white transition hover:border-cyan-300 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 motion-reduce:transition-none sm:w-auto"
+                        >
+                          Ver proyectos
+                        </Link>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </article>
               ))}
             </div>
-            {activeSlide.cta_text && activeSlide.cta_url ? (
-              <div className="mt-7 flex flex-wrap gap-3">
-                {activeSlide.cta_url.startsWith("/") ? (
-                  <Link
-                    href={activeSlide.cta_url}
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-cyan-400 px-6 py-3 text-center font-semibold text-slate-950 transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 motion-reduce:transition-none"
-                  >
-                    {activeSlide.cta_text}
-                    <span aria-hidden="true">→</span>
-                  </Link>
-                ) : (
-                  <a
-                    href={activeSlide.cta_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-cyan-400 px-6 py-3 text-center font-semibold text-slate-950 transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 motion-reduce:transition-none"
-                  >
-                    {activeSlide.cta_text}
-                    <span aria-hidden="true">↗</span>
-                  </a>
-                )}
-                {!hasPublishedSlides ? (
-                  <Link
-                    href="/#proyectos"
-                    className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/20 px-6 py-3 text-center font-semibold text-white transition hover:border-cyan-300 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 motion-reduce:transition-none"
-                  >
-                    Ver proyectos
-                  </Link>
-                ) : null}
-              </div>
-            ) : null}
           </div>
 
-          <div className="order-1 min-w-0 lg:order-2">
+          <div className="order-2 min-w-0 lg:order-2">
             {mediaFailed || (saveData && activeSlide.media_type === "video") ? (
               <SlideArtwork title={activeSlide.title} />
             ) : (
@@ -415,7 +415,7 @@ export default function Hero({
         </div>
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4 sm:mt-10">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
             {settings.show_arrows && slides.length > 1 ? (
               <>
                 <button
@@ -438,7 +438,7 @@ export default function Hero({
             ) : null}
             {settings.show_indicators && slides.length > 1 ? (
               <div
-                className="ml-1 flex items-center gap-2"
+                className="ml-1 flex max-w-full flex-wrap items-center gap-2"
                 role="group"
                 aria-label="Elegir diapositiva"
               >

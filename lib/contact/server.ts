@@ -23,6 +23,44 @@ type TurnstileResponse = {
   hostname?: unknown;
 };
 
+export function isContactSubmissionConfigured(): boolean {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  let validSiteUrl = false;
+  if (siteUrl) {
+    try {
+      const parsedUrl = new URL(siteUrl);
+      validSiteUrl =
+        parsedUrl.protocol === "https:" || parsedUrl.hostname === "localhost";
+    } catch {
+      validSiteUrl = false;
+    }
+  }
+
+  return Boolean(
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() &&
+      process.env.TURNSTILE_SECRET_KEY?.trim() &&
+      validSiteUrl &&
+      process.env.UPSTASH_REDIS_REST_URL?.trim() &&
+      process.env.UPSTASH_REDIS_REST_TOKEN?.trim() &&
+      process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() &&
+      process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim(),
+  );
+}
+
+export function getContactFormAvailability(): {
+  enabled: boolean;
+  turnstileSiteKey: string;
+} {
+  const enabled = isContactSubmissionConfigured();
+  return {
+    enabled,
+    turnstileSiteKey: enabled
+      ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? ""
+      : "",
+  };
+}
+
 function getClientIp(requestHeaders: Headers): string | null {
   const forwardedFor = requestHeaders.get("x-forwarded-for");
   const candidates = forwardedFor ? forwardedFor.split(",").reverse() : [];
@@ -32,9 +70,12 @@ function getClientIp(requestHeaders: Headers): string | null {
 }
 
 async function verifyTurnstile(token: string): Promise<boolean> {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
-  const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!secret || !siteOrigin || !token || token.length > 2048) return false;
+  if (!isContactSubmissionConfigured() || !token || token.length > 2048) {
+    return false;
+  }
+  const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
+  const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (!secret || !siteOrigin) return false;
 
   try {
     const configuredOrigin = new URL(siteOrigin);
@@ -64,8 +105,9 @@ async function verifyTurnstile(token: string): Promise<boolean> {
 }
 
 async function consumeDistributedRateLimit(ip: string): Promise<boolean | null> {
-  const endpoint = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!isContactSubmissionConfigured()) return null;
+  const endpoint = process.env.UPSTASH_REDIS_REST_URL?.trim();
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
   if (!endpoint || !token) return null;
 
   const key = `contact:rate:${createHash("sha256").update(ip).digest("hex")}`;
@@ -100,6 +142,7 @@ async function consumeDistributedRateLimit(ip: string): Promise<boolean | null> 
 export async function protectContactSubmission(
   token: string,
 ): Promise<"allowed" | "invalid-captcha" | "rate-limited" | "unavailable"> {
+  if (!isContactSubmissionConfigured()) return "unavailable";
   if (!(await verifyTurnstile(token))) return "invalid-captcha";
 
   const ip = getClientIp(await headers());
@@ -118,10 +161,12 @@ export async function insertPublicContactMessage(message: {
   message: string;
 }): Promise<{ success: true } | { success: false; code?: string }> {
   const config = getSupabaseConfig();
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!config || !serviceRoleKey) return { success: false };
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!isContactSubmissionConfigured() || !config || !serviceRoleKey) {
+    return { success: false };
+  }
 
-  const supabase = createClient<Database>(config.url, serviceRoleKey, {
+  const supabase = createClient<Database>(config.url.trim(), serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       detectSessionInUrl: false,

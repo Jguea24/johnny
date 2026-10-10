@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
+import type { Viewport } from "next";
 import { getPublicSiteSettings } from "@/lib/site-settings";
+import PwaControls from "@/components/pwa/PwaControls";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  themeColor: "#22d3ee",
+};
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,6 +28,25 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${settings.title}`,
     },
     description: settings.description,
+    manifest: "/manifest.webmanifest",
+    icons: {
+      icon: [
+        { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+        { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+      ],
+      apple: [
+        {
+          url: "/icons/apple-touch-icon.png",
+          sizes: "180x180",
+          type: "image/png",
+        },
+      ],
+    },
+    appleWebApp: {
+      capable: true,
+      title: "Johnny",
+      statusBarStyle: "black-translucent",
+    },
     keywords: [
       "desarrollo web",
       "soluciones tecnológicas",
@@ -43,7 +68,10 @@ export default function RootLayout({
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="min-h-screen">{children}</body>
+      <body className="min-h-screen">
+        {children}
+        <PwaControls />
+      </body>
     </html>
   );
 }

@@ -16,7 +16,7 @@ export default function CatalogFilters({
   onQueryChange: (value: string) => void;
 }) {
   return (
-    <div className="mt-10 grid gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-[minmax(12rem,0.65fr)_minmax(16rem,1fr)]">
+    <div className="mt-8 grid min-w-0 gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:mt-10 sm:grid-cols-[minmax(0,0.65fr)_minmax(0,1fr)] sm:p-5">
       <div>
         <label
           htmlFor="catalog-category"

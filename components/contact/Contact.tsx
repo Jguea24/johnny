@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import ContactForm from "@/components/contact/ContactForm";
+import { getContactFormAvailability } from "@/lib/contact/server";
 import type { PublicSiteSettings } from "@/lib/site-settings";
 
 export default function Contact({
@@ -7,26 +8,16 @@ export default function Contact({
 }: {
   settings: PublicSiteSettings;
 }) {
-  const turnstileSiteKey =
-    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? "";
-  const contactSubmissionEnabled = Boolean(
-    turnstileSiteKey &&
-      process.env.TURNSTILE_SECRET_KEY &&
-      process.env.UPSTASH_REDIS_REST_URL &&
-      process.env.UPSTASH_REDIS_REST_TOKEN &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY &&
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-  );
+  const { enabled, turnstileSiteKey } = getContactFormAvailability();
 
   return (
     <section id="contacto" className="border-t border-white/10 bg-slate-900">
-      <div className="mx-auto grid max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
-        <div className="lg:sticky lg:top-28 lg:self-start">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-16 sm:gap-12 sm:px-6 sm:py-20 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
+        <div className="min-w-0 lg:sticky lg:top-28 lg:self-start">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-400">
             Contacto
           </p>
-          <h2 className="mt-4 text-4xl font-bold text-white sm:text-5xl">
+          <h2 className="mt-4 text-[clamp(2rem,5vw,3rem)] font-bold text-white">
             Hablemos de tu idea.
           </h2>
           <p className="mt-6 max-w-xl text-lg leading-8 text-slate-300">
@@ -62,7 +53,7 @@ export default function Contact({
             Explorar servicios <span className="ml-2" aria-hidden="true">→</span>
           </a>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-950 p-6 sm:p-8">
+        <div className="min-w-0 rounded-2xl border border-white/10 bg-slate-950 p-4 sm:p-8">
           <h3 className="text-xl font-semibold text-white">Envíame un mensaje</h3>
           <p className="mt-2 text-sm leading-6 text-slate-400">
             Los campos marcados son obligatorios. La información se utilizará
@@ -78,7 +69,7 @@ export default function Contact({
             >
               <ContactForm
                 turnstileSiteKey={turnstileSiteKey}
-                enabled={contactSubmissionEnabled}
+                enabled={enabled}
               />
             </Suspense>
           </div>

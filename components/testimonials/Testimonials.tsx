@@ -1,4 +1,5 @@
 import type { PublicTestimonial } from "@/components/portfolio/PortfolioContent";
+import Image from "next/image";
 
 type Listing<T> =
   | { status: "ready"; data: T[] }
@@ -21,12 +22,12 @@ export default function Testimonials({
       id="testimonios"
       className="border-t border-white/10 bg-slate-950"
     >
-      <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <div className="max-w-2xl">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-400">
             Testimonios
           </p>
-          <h2 className="mt-4 text-4xl font-bold sm:text-5xl">
+          <h2 className="mt-4 text-[clamp(2rem,5vw,3rem)] font-bold">
             Experiencias compartidas.
           </h2>
         </div>
@@ -43,14 +44,16 @@ export default function Testimonials({
                 </blockquote>
                 <div className="mt-6 flex items-center gap-4">
                   {testimonial.photo_url ? (
-                    <div
-                      role="img"
-                      aria-label={testimonial.name}
-                      className="h-12 w-12 shrink-0 rounded-full border border-white/10 bg-cover bg-center"
-                      style={{
-                        backgroundImage: `url("${testimonial.photo_url.replaceAll('"', "%22")}")`,
-                      }}
-                    />
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-white/10">
+                      <Image
+                        src={testimonial.photo_url}
+                        alt={testimonial.name}
+                        fill
+                        unoptimized
+                        sizes="3rem"
+                        className="object-cover"
+                      />
+                    </div>
                   ) : (
                     <div
                       aria-hidden="true"

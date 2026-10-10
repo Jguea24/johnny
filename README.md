@@ -140,10 +140,10 @@ reproducción falla, el Hero muestra una alternativa visual.
 En `/admin/carrusel`, crea o edita diapositivas, carga medios, previsualiza el
 resultado, marca el contenido como publicado/borrador y ajusta el orden o la
 configuración global. El autoplay viene activado cada 3.000 ms y puede
-desactivarse o configurarse entre 3.000 y 60.000 ms; también pueden ocultarse
-las flechas y los indicadores. La presentación pública pausa el autoplay al
-interactuar, al ocultar la pestaña o con `prefers-reduced-motion`; solo monta el
-video de la diapositiva actual.
+desactivarse o configurarse desde 3.000 ms hasta el límite seguro de `setInterval`
+(2.147.483.647 ms); también pueden ocultarse las flechas y los indicadores. La
+presentación pública pausa el autoplay al interactuar, al ocultar la pestaña o
+con `prefers-reduced-motion`; solo monta el video de la diapositiva actual.
 
 Supabase recomienda cargas TUS reanudables para archivos mayores de 6 MB. Esta
 implementación usa la carga estándar existente de `supabase-js` para evitar
@@ -173,3 +173,30 @@ este repositorio, quedan pendientes estas verificaciones manuales:
 
 No se ha aplicado ninguna migración ni política a un proyecto remoto desde
 este repositorio.
+
+## Progressive Web App (PWA)
+
+La aplicación incluye `app/manifest.ts`, un service worker de mismo origen y
+una página genérica de respaldo en `public/offline.html`. Para habilitar la
+instalación y el funcionamiento del service worker, sirve el sitio por HTTPS
+(localhost también es válido para desarrollo). El worker se registra solo en
+producción, no almacena HTML, datos de Supabase, formularios, sesiones ni
+respuestas de autenticación; únicamente mantiene recursos estáticos versionados
+y la página offline. Formularios, inicio de sesión y datos actualizados siguen
+requiriendo conexión.
+
+Los iconos actuales se generaron desde `public/icons/johnny-mark.svg` como
+marca provisional, ya que el repositorio no incluye un logotipo rasterizado
+adecuado para una PWA. Al disponer del logotipo autorizado, reemplaza el SVG y
+regenera `icon-192.png`, `icon-512.png`, `icon-maskable-192.png`,
+`icon-maskable-512.png` y `apple-touch-icon.png`. Mantén el símbolo importante
+dentro del 80% central del lienzo en las variantes maskable.
+
+En Android y navegadores Chromium compatibles, el botón discreto aparece solo
+cuando el navegador emite `beforeinstallprompt`; también se muestran
+instrucciones de instalación manual apropiadas al navegador. En iPhone y iPad,
+abre el sitio en Safari y elige **Compartir → Añadir a pantalla de inicio**.
+Para comprobar instalación y modo offline localmente usa una compilación de
+producción (`npm run build` y `npm run start`), ya que el worker no se registra
+en modo desarrollo. La primera visita online debe completar la instalación del
+worker antes de que esté disponible la página genérica sin conexión.

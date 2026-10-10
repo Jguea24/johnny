@@ -59,7 +59,7 @@ async function ProfileContent({
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-16 text-white">
+    <main className="min-h-screen bg-slate-950 px-4 py-12 text-white sm:px-6 sm:py-16">
       <div className="mx-auto max-w-3xl">
         <header className="flex flex-wrap items-start justify-between gap-5">
           <div>
@@ -80,7 +80,7 @@ async function ProfileContent({
             </button>
           </form>
         </header>
-        <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-6 sm:p-8">
+        <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-8">
           {errorCode === "forbidden" ? (
             <p
               className="mb-6 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
@@ -101,7 +101,7 @@ async function ProfileContent({
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6">
             <div>
               <p className="text-sm text-slate-400">Correo de la cuenta</p>
-              <p className="mt-1 font-medium text-white">{profile.email}</p>
+              <p className="mt-1 break-all font-medium text-white">{profile.email}</p>
             </div>
             <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-200">
               {profile.role === "ADMIN" ? "Administrador" : "Usuario"}
@@ -127,7 +127,7 @@ export default function ProfilePage({
     <Suspense
       fallback={
         <main
-          className="min-h-screen bg-slate-950 px-6 py-24 text-center text-slate-300"
+          className="min-h-screen bg-slate-950 px-4 py-16 text-center text-slate-300 sm:px-6 sm:py-24"
           aria-busy="true"
         >
           Cargando perfil…

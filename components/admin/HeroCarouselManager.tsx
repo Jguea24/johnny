@@ -142,8 +142,6 @@ function SlideEditor({
         }
       : blankDraft,
   );
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
-  const [posterFile, setPosterFile] = useState<File | null>(null);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string | null>(null);
   const [posterPreviewUrl, setPosterPreviewUrl] = useState<string | null>(null);
   const [clearPoster, setClearPoster] = useState(false);
@@ -170,12 +168,10 @@ function SlideEditor({
   }
 
   function selectMediaFile(file: File | null) {
-    setMediaFile(file);
     setMediaPreviewUrl(file ? URL.createObjectURL(file) : null);
   }
 
   function selectPosterFile(file: File | null) {
-    setPosterFile(file);
     setPosterPreviewUrl(file ? URL.createObjectURL(file) : null);
   }
 
@@ -241,8 +237,6 @@ function SlideEditor({
             onChange={(event) => {
               const nextType = event.target.value as HeroMediaType;
               updateDraft("media_type", nextType);
-              setMediaFile(null);
-              setPosterFile(null);
               setMediaPreviewUrl(null);
               setPosterPreviewUrl(null);
               setClearPoster(nextType === "image");
@@ -562,7 +556,7 @@ function CarouselSettingsForm({
           name="autoplay_interval_ms"
           type="number"
           min={3000}
-          max={60000}
+          max={2147483647}
           step={500}
           required
           defaultValue={settings.autoplay_interval_ms}

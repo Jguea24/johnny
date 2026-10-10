@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedProfileRole } from "@/lib/auth/identity";
 import { getAuthenticatedDestination, getSafeNextPath } from "@/lib/auth/redirects";
 import {
+  isContactSubmissionConfigured,
   insertPublicContactMessage,
   protectContactSubmission,
 } from "@/lib/contact/server";
@@ -364,6 +365,11 @@ export async function sendContactMessageAction(
   if (parsed.data.website) {
     return { success: "Gracias. Tu mensaje fue recibido." };
   }
+  if (!isContactSubmissionConfigured()) {
+    return {
+      error: "El formulario no está disponible temporalmente. Inténtalo más tarde.",
+    };
+  }
 
   const protection = await protectContactSubmission(parsed.data.captchaToken ?? "");
   if (protection === "invalid-captcha") {
@@ -379,8 +385,7 @@ export async function sendContactMessageAction(
   }
   if (protection === "unavailable") {
     return {
-      error:
-        "El envío no está disponible temporalmente. Inténtalo más tarde.",
+      error: "El formulario no está disponible temporalmente. Inténtalo más tarde.",
     };
   }
 

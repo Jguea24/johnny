@@ -137,7 +137,7 @@ create table public.hero_carousel_settings (
   id smallint primary key default 1 check (id = 1),
   autoplay_enabled boolean not null default true,
   autoplay_interval_ms integer not null default 3000
-    check (autoplay_interval_ms between 3000 and 60000),
+    check (autoplay_interval_ms between 3000 and 2147483647),
   show_arrows boolean not null default true,
   show_indicators boolean not null default true,
   updated_at timestamptz not null default now()

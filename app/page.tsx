@@ -9,10 +9,16 @@ import PortfolioContent, {
 import Contact from "@/components/contact/Contact";
 import Footer from "@/components/footer/Footer";
 import { getPublicSiteSettings } from "@/lib/site-settings";
+import { getPublicTeam } from "@/lib/team";
 
 async function PublicHero() {
   const carousel = await getPublicHeroCarousel();
   return <Hero carousel={carousel} />;
+}
+
+async function PublicTeamSection() {
+  const team = await getPublicTeam();
+  return <About team={team} />;
 }
 
 export default async function Home() {
@@ -24,7 +30,9 @@ export default async function Home() {
       <Suspense fallback={<Hero />}>
         <PublicHero />
       </Suspense>
-      <About />
+      <Suspense fallback={<About team={{ status: "loading" }} />}>
+        <PublicTeamSection />
+      </Suspense>
       <Suspense fallback={<PortfolioContentLoading />}>
         <PortfolioContent />
       </Suspense>

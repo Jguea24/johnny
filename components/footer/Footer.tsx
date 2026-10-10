@@ -11,9 +11,9 @@ export default function Footer({
 
   return (
     <footer className="border-t border-white/10 bg-slate-950">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-8 text-sm text-slate-500 md:flex-row md:items-center md:justify-between lg:px-8">
-        <p>© {settings.title}. Todos los derechos reservados.</p>
-        <p>{settings.description}</p>
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-slate-500 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+        <p className="min-w-0 break-words">© {settings.title}. Todos los derechos reservados.</p>
+        <p className="min-w-0 max-w-2xl break-words">{settings.description}</p>
         {socialLinks.length > 0 ? (
           <nav aria-label="Redes sociales" className="flex flex-wrap gap-4">
             {socialLinks.map(([network, url]) => (

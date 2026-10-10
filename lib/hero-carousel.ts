@@ -79,8 +79,8 @@ export async function getPublicHeroCarousel(): Promise<PublicHeroCarousel> {
     };
   }
 
+  await io();
   try {
-    await io();
     const supabase = await createClient();
     const [slidesResult, settingsResult] = await Promise.all([
       supabase
@@ -118,7 +118,7 @@ export async function getPublicHeroCarousel(): Promise<PublicHeroCarousel> {
             autoplay_enabled: settingsResult.data.autoplay_enabled,
             autoplay_interval_ms: Math.max(
               3000,
-              Math.min(60000, settingsResult.data.autoplay_interval_ms),
+              Math.min(2147483647, settingsResult.data.autoplay_interval_ms),
             ),
             show_arrows: settingsResult.data.show_arrows,
             show_indicators: settingsResult.data.show_indicators,

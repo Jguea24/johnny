@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/identity";
+import { validateMediaFile, type ExpectedMediaKind } from "@/lib/admin/media-validation";
 import type { Database, HeroMediaType } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -17,22 +18,7 @@ type HeroSlideRow = Database["public"]["Tables"]["hero_slides"]["Row"];
 
 const idSchema = z.string().uuid("La diapositiva seleccionada no es válida.");
 const mediaTypes = ["image", "video"] as const satisfies readonly HeroMediaType[];
-const maxImageBytes = 8 * 1024 * 1024;
-const maxVideoBytes = 30 * 1024 * 1024;
 const bucket = "site-media";
-
-const mediaFormats = {
-  "image/jpeg": { extension: "jpg", extensions: ["jpg", "jpeg"], kind: "image" },
-  "image/png": { extension: "png", extensions: ["png"], kind: "image" },
-  "image/webp": { extension: "webp", extensions: ["webp"], kind: "image" },
-  "image/avif": { extension: "avif", extensions: ["avif"], kind: "image" },
-  "video/mp4": { extension: "mp4", extensions: ["mp4"], kind: "video" },
-  "video/webm": { extension: "webm", extensions: ["webm"], kind: "video" },
-} as const;
-
-function isMediaMimeType(mimeType: string): mimeType is keyof typeof mediaFormats {
-  return Object.hasOwn(mediaFormats, mimeType);
-}
 
 function value(formData: FormData, name: string): string {
   const entry = formData.get(name);
@@ -85,108 +71,22 @@ function validateDestination(raw: string) {
   };
 }
 
-function fileSignatureMatches(
-  bytes: Uint8Array,
-  mimeType: string,
-): boolean {
-  const ascii = (start: number, length: number) =>
-    String.fromCharCode(...bytes.slice(start, start + length));
-  const brands =
-    ascii(4, 4) === "ftyp"
-      ? [
-          ascii(8, 4),
-          ...Array.from(
-            { length: Math.max(0, Math.floor((bytes.length - 16) / 4)) },
-            (_, index) => ascii(16 + index * 4, 4),
-          ),
-        ]
-      : [];
-  switch (mimeType) {
-    case "image/jpeg":
-      return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-    case "image/png":
-      return (
-        bytes[0] === 0x89 &&
-        ascii(1, 3) === "PNG" &&
-        bytes[4] === 0x0d &&
-        bytes[5] === 0x0a &&
-        bytes[6] === 0x1a &&
-        bytes[7] === 0x0a
-      );
-    case "image/webp":
-      return ascii(0, 4) === "RIFF" && ascii(8, 4) === "WEBP";
-    case "image/avif":
-      return (
-        brands.includes("avif") || brands.includes("avis")
-      );
-    case "video/mp4":
-      return brands.length > 0;
-    case "video/webm":
-      return (
-        bytes[0] === 0x1a &&
-        bytes[1] === 0x45 &&
-        bytes[2] === 0xdf &&
-        bytes[3] === 0xa3
-      );
-    default:
-      return false;
-  }
-}
-
 async function uploadValidatedFile(
   supabase: ServerClient,
   file: File,
   id: string,
-  expectedKind: "image" | "video" | "image-or-video",
+  expectedKind: ExpectedMediaKind,
 ): Promise<
   | { success: true; path: string }
   | { success: false; error: string }
 > {
-  const mimeType = file.type.trim().toLowerCase();
-  const format = isMediaMimeType(mimeType) ? mediaFormats[mimeType] : null;
-  if (!format || (expectedKind !== "image-or-video" && format.kind !== expectedKind)) {
-    return {
-      success: false,
-      error:
-        expectedKind === "image"
-          ? "Selecciona una imagen JPEG, PNG, WebP o AVIF."
-          : "Selecciona un video MP4 o WebM.",
-    };
-  }
+  const validation = await validateMediaFile(file, expectedKind);
+  if (!validation.success) return validation;
 
-  const maxBytes = format.kind === "image" ? maxImageBytes : maxVideoBytes;
-  if (file.size > maxBytes) {
-    return {
-      success: false,
-      error:
-        format.kind === "image"
-          ? "La imagen supera el límite de 8 MB."
-          : "El video supera el límite de 30 MB.",
-    };
-  }
-
-  const extension = file.name.split(".").pop()?.toLowerCase();
-  if (
-    !extension ||
-    !format.extensions.some((allowedExtension) => allowedExtension === extension)
-  ) {
-    return {
-      success: false,
-      error: "La extensión del archivo no coincide con su tipo de contenido.",
-    };
-  }
-  const bytes = new Uint8Array(await file.slice(0, 64).arrayBuffer());
-  if (!fileSignatureMatches(bytes, mimeType)) {
-    return {
-      success: false,
-      error: "El contenido del archivo no coincide con el tipo MIME declarado.",
-    };
-  }
-
-  const path = `hero-slides/${id}/${crypto.randomUUID()}.${format.extension}`;
+  const path = `hero-slides/${id}/${crypto.randomUUID()}.${validation.extension}`;
   const { error } = await supabase.storage.from(bucket).upload(path, file, {
     cacheControl: "31536000",
-    contentType: mimeType,
+    contentType: validation.mimeType,
     upsert: false,
   });
   if (error) {
@@ -474,11 +374,17 @@ export async function saveHeroCarouselSettingsAction(
   formData: FormData,
 ): Promise<HeroActionState> {
   const { supabase } = await requireAdmin();
-  const interval = z.coerce.number().int().min(3000).max(60000).safeParse(
-    value(formData, "autoplay_interval_ms"),
-  );
+  const interval = z
+    .coerce
+    .number()
+    .int()
+    .min(3000)
+    .max(2147483647)
+    .safeParse(value(formData, "autoplay_interval_ms"));
   if (!interval.success) {
-    return { error: "El intervalo debe estar entre 3.000 y 60.000 ms." };
+    return {
+      error: "El intervalo debe ser un entero entre 3.000 y 2.147.483.647 ms.",
+    };
   }
 
   try {

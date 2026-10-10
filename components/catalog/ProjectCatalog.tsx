@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import CatalogFilters from "@/components/catalog/CatalogFilters";
 import type { PublicCategory, PublicListing, PublicProject } from "@/lib/portfolio";
 
@@ -49,23 +50,21 @@ export default function ProjectCatalog({
                   key={project.id}
                   className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950 transition duration-300 hover:-translate-y-1 hover:border-cyan-400/40 motion-reduce:transform-none motion-reduce:transition-none"
                 >
-                  <div
-                    role={project.main_image ? "img" : undefined}
-                    aria-label={project.main_image ? project.title : undefined}
-                    className="flex h-52 items-center justify-center bg-gradient-to-br from-cyan-950 to-slate-900 bg-cover bg-center"
-                    style={
-                      project.main_image
-                        ? {
-                            backgroundImage: `url("${project.main_image.replaceAll('"', "%22")}")`,
-                          }
-                        : undefined
-                    }
-                  >
-                    {!project.main_image ? (
+                  <div className="relative flex aspect-[16/10] items-center justify-center bg-gradient-to-br from-cyan-950 to-slate-900">
+                    {project.main_image ? (
+                      <Image
+                        src={project.main_image}
+                        alt={project.title}
+                        fill
+                        unoptimized
+                        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                        className="object-cover"
+                      />
+                    ) : (
                       <span aria-hidden="true" className="text-4xl text-cyan-200">
                         ◇
                       </span>
-                    ) : null}
+                    )}
                   </div>
                   <div className="p-6">
                     <div className="flex flex-wrap items-center gap-2">
@@ -104,7 +103,7 @@ export default function ProjectCatalog({
                     ) : null}
                     <Link
                       href={`/proyectos/${encodeURIComponent(project.slug)}`}
-                      className="mt-6 inline-block rounded-sm font-semibold text-cyan-300 outline-none hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-300"
+                      className="mt-4 inline-flex min-h-11 items-center rounded-sm font-semibold text-cyan-300 outline-none hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-300"
                     >
                       Ver proyecto <span aria-hidden="true">→</span>
                     </Link>

@@ -20,6 +20,7 @@ export type RequestPriority = "BAJA" | "NORMAL" | "ALTA" | "URGENTE";
 export type ContactMessageStatus = "NUEVO" | "LEIDO" | "RESPONDIDO" | "ARCHIVADO";
 export type TestimonialStatus = "DRAFT" | "ACTIVE" | "INACTIVE";
 export type HeroMediaType = "image" | "video";
+export type TeamMemberType = "FOUNDER" | "COLLABORATOR";
 
 type Table<Row, Insert, Update = Partial<Insert>> = {
   Row: Row;
@@ -212,6 +213,42 @@ export type Database = {
           photo_url?: string | null;
           rating?: number;
           status?: TestimonialStatus;
+          created_at?: string;
+          updated_at?: string;
+        }
+      >;
+      team_members: Table<
+        Timestamped & {
+          id: string;
+          member_type: TeamMemberType;
+          full_name: string;
+          slug: string;
+          position: string;
+          specialty: string;
+          bio: string;
+          avatar_url: string | null;
+          avatar_path: string | null;
+          linkedin_url: string | null;
+          website_url: string | null;
+          display_order: number;
+          is_featured: boolean;
+          is_active: boolean;
+        },
+        {
+          id?: string;
+          member_type?: TeamMemberType;
+          full_name?: string;
+          slug: string;
+          position?: string;
+          specialty?: string;
+          bio?: string;
+          avatar_url?: string | null;
+          avatar_path?: string | null;
+          linkedin_url?: string | null;
+          website_url?: string | null;
+          display_order?: number;
+          is_featured?: boolean;
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         }

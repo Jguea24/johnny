@@ -16,7 +16,7 @@ export default async function ContactPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <Navbar siteTitle={settings.title} />
-      <div className="h-20" />
+      <div className="h-[calc(5rem+env(safe-area-inset-top))]" />
       <Contact settings={settings} />
       <Footer settings={settings} />
     </main>

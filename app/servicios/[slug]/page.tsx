@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
@@ -26,8 +27,8 @@ async function ServiceDetailContent({ params }: PageProps) {
   if (result.status === "not-found") notFound();
   if (result.status !== "ready") {
     return (
-      <main className="min-h-screen bg-slate-950 px-6 py-24 text-white">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-white/10 bg-white/[0.03] p-8">
+      <main className="min-h-screen bg-slate-950 px-4 py-16 text-white sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-8">
           <h1 className="text-2xl font-semibold">Servicio no disponible</h1>
           <p className="mt-3 text-slate-300" role="alert">
             No fue posible consultar este servicio en este momento. Inténtalo
@@ -35,7 +36,7 @@ async function ServiceDetailContent({ params }: PageProps) {
           </p>
           <Link
             href="/servicios"
-            className="mt-6 inline-block font-semibold text-cyan-300 hover:text-cyan-200"
+            className="mt-6 inline-flex min-h-11 items-center font-semibold text-cyan-300 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
           >
             ← Volver a servicios
           </Link>
@@ -50,22 +51,24 @@ async function ServiceDetailContent({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <article className="mx-auto max-w-4xl px-6 py-16 lg:px-8">
+      <article className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <Link
           href="/servicios"
-          className="rounded-sm text-sm font-medium text-cyan-300 outline-none hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-300"
+          className="inline-flex min-h-11 items-center rounded-sm text-sm font-medium text-cyan-300 outline-none hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-300"
         >
           ← Todos los servicios
         </Link>
         {service.image_url ? (
-          <div
-            role="img"
-            aria-label={service.title}
-            className="mt-8 h-64 rounded-2xl border border-white/10 bg-cover bg-center sm:h-80"
-            style={{
-              backgroundImage: `url("${service.image_url.replaceAll('"', "%22")}")`,
-            }}
-          />
+          <div className="relative mt-8 aspect-[16/10] overflow-hidden rounded-2xl border border-white/10 sm:aspect-[2/1]">
+            <Image
+              src={service.image_url}
+              alt={service.title}
+              fill
+              unoptimized
+              sizes="(max-width: 768px) 100vw, 64rem"
+              className="object-cover"
+            />
+          </div>
         ) : null}
         <header className="mt-10">
           {category ? (
@@ -73,7 +76,7 @@ async function ServiceDetailContent({ params }: PageProps) {
               {category.name}
             </p>
           ) : null}
-          <h1 className="mt-3 text-4xl font-bold sm:text-5xl">
+          <h1 className="mt-3 break-words text-[clamp(2rem,5vw,3rem)] font-bold">
             {service.title}
           </h1>
           <p className="mt-5 text-xl leading-8 text-slate-300">
@@ -94,7 +97,7 @@ async function ServiceDetailContent({ params }: PageProps) {
         </div>
         <section
           id="solicitar"
-          className="mt-12 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] p-6 sm:p-8"
+          className="mt-12 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] p-4 sm:p-8"
         >
           <h2 className="text-xl font-semibold">¿Te interesa este servicio?</h2>
           <p className="mt-2 text-slate-300">
@@ -117,7 +120,7 @@ export default function ServiceDetailPage({ params }: PageProps) {
     <Suspense
       fallback={
         <main
-          className="min-h-screen bg-slate-950 px-6 py-24 text-center text-slate-300"
+          className="min-h-screen bg-slate-950 px-4 py-16 text-center text-slate-300 sm:px-6 sm:py-24"
           aria-busy="true"
         >
           Cargando servicio…

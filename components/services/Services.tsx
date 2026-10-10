@@ -1,5 +1,6 @@
 import type { PublicService } from "@/components/portfolio/PortfolioContent";
 import Link from "next/link";
+import Image from "next/image";
 
 type Listing<T> =
   | { status: "ready"; data: T[] }
@@ -16,7 +17,7 @@ export default function Services({
 }: ServicesProps) {
   return (
     <section id="servicios" className="bg-slate-950">
-      <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
 
         {/* ENCABEZADO */}
         <div className="max-w-2xl">
@@ -24,7 +25,7 @@ export default function Services({
             Servicios
           </p>
 
-          <h2 className="mt-4 text-4xl font-bold sm:text-5xl">
+          <h2 className="mt-4 text-[clamp(2rem,5vw,3rem)] font-bold">
             Soluciones para tus necesidades tecnológicas.
           </h2>
 
@@ -45,14 +46,16 @@ export default function Services({
               >
                 <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-cyan-500/10 text-3xl transition group-hover:bg-cyan-500/20">
                   {service.image_url ? (
-                    <div
-                      role="img"
-                      aria-label={service.title}
-                      className="h-full w-full bg-cover bg-center"
-                      style={{
-                        backgroundImage: `url("${service.image_url.replaceAll('"', "%22")}")`,
-                      }}
-                    />
+                    <div className="relative h-full w-full">
+                      <Image
+                        src={service.image_url}
+                        alt={service.title}
+                        fill
+                        unoptimized
+                        sizes="3.5rem"
+                        className="object-cover"
+                      />
+                    </div>
                   ) : (
                     <span aria-hidden="true">{service.icon || "◇"}</span>
                   )}
@@ -84,13 +87,13 @@ export default function Services({
                 <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold">
                   <Link
                     href={`/servicios/${encodeURIComponent(service.slug)}`}
-                    className="text-cyan-300 transition hover:text-cyan-200"
+                    className="inline-flex min-h-11 items-center text-cyan-300 transition hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
                   >
                     Ver detalles <span aria-hidden="true">→</span>
                   </Link>
                   <a
                     href="#contacto"
-                    className="text-cyan-400 transition hover:text-cyan-300"
+                    className="inline-flex min-h-11 items-center text-cyan-400 transition hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
                   >
                     Solicitar servicio
                   </a>

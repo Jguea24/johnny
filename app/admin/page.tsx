@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth/identity";
 
 export const metadata: Metadata = {
+  
   title: "Administración",
   description: "Resumen de contenido y actividad del sitio.",
 };

@@ -48,7 +48,7 @@ export function PortfolioContentLoading() {
           key={section}
           className="border-t border-white/10 bg-slate-900"
         >
-          <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
             <div className="h-4 w-32 animate-pulse rounded bg-white/10 motion-reduce:animate-none" />
             <div className="mt-5 h-10 max-w-lg animate-pulse rounded bg-white/10 motion-reduce:animate-none" />
             <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
