@@ -529,6 +529,58 @@ function DigitalProductForm({
         </div>
 
         <div>
+          <label className="mb-1.5 block text-sm font-medium text-slate-200" htmlFor={`${operation}-${record?.id ?? "new"}-stock-mode`}>
+            Control de existencias
+          </label>
+          <select
+            id={`${operation}-${record?.id ?? "new"}-stock-mode`}
+            name="stock_mode"
+            value={textValue(get("stock_mode")) || "UNLIMITED"}
+            onChange={(event) => {
+              const stockMode = event.target.value;
+              setHideFieldErrors(true);
+              setValues((current) => ({
+                ...current,
+                stock_mode: stockMode,
+                ...(stockMode === "UNLIMITED" ? { stock_quantity: "" } : {}),
+              }));
+            }}
+            className="field-control"
+            aria-invalid={Boolean(fieldError("stock_mode"))}
+          >
+            <option value="UNLIMITED">Sin límite de unidades</option>
+            <option value="LIMITED">Tengo unidades limitadas</option>
+          </select>
+          <p className="mt-1 text-xs text-slate-500">Activa el control si necesitas indicar cuántas unidades tienes disponibles.</p>
+          {fieldError("stock_mode") ? <p className="mt-1 text-xs text-rose-200">{fieldError("stock_mode")}</p> : null}
+        </div>
+
+        {get("stock_mode") === "LIMITED" ? (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-200" htmlFor={`${operation}-${record?.id ?? "new"}-stock-quantity`}>
+              Unidades disponibles
+            </label>
+            <input
+              id={`${operation}-${record?.id ?? "new"}-stock-quantity`}
+              name="stock_quantity"
+              type="number"
+              min="0"
+              max="10000000"
+              step="1"
+              required
+              value={textValue(get("stock_quantity"))}
+              onChange={(event) => set("stock_quantity", event.target.value)}
+              className="field-control"
+              aria-invalid={Boolean(fieldError("stock_quantity"))}
+            />
+            <p className="mt-1 text-xs text-slate-500">Escribe 0 si temporalmente no tienes unidades.</p>
+            {fieldError("stock_quantity") ? <p className="mt-1 text-xs text-rose-200">{fieldError("stock_quantity")}</p> : null}
+          </div>
+        ) : (
+          <input type="hidden" name="stock_quantity" value="" />
+        )}
+
+        <div>
           <label className="mb-1.5 block text-sm font-medium text-slate-200" htmlFor={`${operation}-${record?.id ?? "new"}-status`}>
             Estado de publicación
           </label>
@@ -776,35 +828,6 @@ function DigitalProductForm({
             <input id={`${operation}-${record?.id ?? "new"}-previous-price`} name="previous_price" type="number" min="0.01" max="9999999999.99" step="0.01" value={textValue(get("previous_price"))} onChange={(event) => set("previous_price", event.target.value)} className="field-control" aria-invalid={Boolean(fieldError("previous_price"))} />
             {fieldError("previous_price") ? <p className="mt-1 text-xs text-rose-200">{fieldError("previous_price")}</p> : null}
           </div>
-
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-200" htmlFor={`${operation}-${record?.id ?? "new"}-stock-mode`}>
-              Existencias
-            </label>
-            <select
-              id={`${operation}-${record?.id ?? "new"}-stock-mode`}
-              name="stock_mode"
-              value={textValue(get("stock_mode")) || "UNLIMITED"}
-              onChange={(event) => {
-                const stockMode = event.target.value;
-                setHideFieldErrors(true);
-                setValues((current) => ({ ...current, stock_mode: stockMode, ...(stockMode === "UNLIMITED" ? { stock_quantity: "" } : {}) }));
-              }}
-              className="field-control"
-            >
-              <option value="UNLIMITED">Sin límite configurado</option>
-              <option value="LIMITED">Controlar unidades</option>
-            </select>
-          </div>
-          {get("stock_mode") === "LIMITED" ? (
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-200" htmlFor={`${operation}-${record?.id ?? "new"}-stock-quantity`}>
-                Unidades disponibles
-              </label>
-              <input id={`${operation}-${record?.id ?? "new"}-stock-quantity`} name="stock_quantity" type="number" min="0" max="10000000" step="1" value={textValue(get("stock_quantity"))} onChange={(event) => set("stock_quantity", event.target.value)} className="field-control" aria-invalid={Boolean(fieldError("stock_quantity"))} />
-              {fieldError("stock_quantity") ? <p className="mt-1 text-xs text-rose-200">{fieldError("stock_quantity")}</p> : null}
-            </div>
-          ) : <input type="hidden" name="stock_quantity" value="" />}
 
           <div className="md:col-span-2">
             <label className="mb-1.5 block text-sm font-medium text-slate-200" htmlFor={`${operation}-${record?.id ?? "new"}-features`}>
