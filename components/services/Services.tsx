@@ -16,16 +16,16 @@ export default function Services({
   categoryNames,
 }: ServicesProps) {
   return (
-    <section id="servicios" className="bg-slate-950">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+    <section id="servicios" className="bg-transparent">
+      <div className="page-container section-space">
 
         {/* ENCABEZADO */}
         <div className="max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-400">
+          <p className="section-eyebrow">
             Servicios
           </p>
 
-          <h2 className="mt-4 text-[clamp(2rem,5vw,3rem)] font-bold">
+          <h2 className="section-title">
             Soluciones para tus necesidades tecnológicas.
           </h2>
 
@@ -42,7 +42,7 @@ export default function Services({
             {services.data.map((service) => (
               <article
                 key={service.id}
-                className="group rounded-2xl border border-white/10 bg-white/5 p-6 transition duration-300 hover:-translate-y-1 hover:border-cyan-400/50 hover:bg-white/[0.07] motion-reduce:transform-none motion-reduce:transition-none"
+                className="surface-card group flex h-full flex-col p-6 transition duration-300 hover:-translate-y-1 hover:border-cyan-300/35 hover:bg-cyan-300/[0.04] motion-reduce:transform-none motion-reduce:transition-none"
               >
                 <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-cyan-500/10 text-3xl transition group-hover:bg-cyan-500/20">
                   {service.image_url ? (
@@ -91,12 +91,12 @@ export default function Services({
                   >
                     Ver detalles <span aria-hidden="true">→</span>
                   </Link>
-                  <a
-                    href="#contacto"
+                  <Link
+                    href="/#contacto"
                     className="inline-flex min-h-11 items-center text-cyan-400 transition hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
                   >
                     Solicitar servicio
-                  </a>
+                  </Link>
                 </div>
               </article>
             ))}

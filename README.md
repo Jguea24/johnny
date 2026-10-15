@@ -22,14 +22,19 @@ No agregues claves `service_role` a variables `NEXT_PUBLIC_*` ni al cliente.
 La aplicación no incluye credenciales; las funciones que requieren Supabase
 indican explícitamente cuándo falta la configuración.
 
-El envío público de contacto requiere configurar `NEXT_PUBLIC_TURNSTILE_SITE_KEY`,
-`TURNSTILE_SECRET_KEY`, `UPSTASH_REDIS_REST_URL`,
-`UPSTASH_REDIS_REST_TOKEN` y `SUPABASE_SERVICE_ROLE_KEY`. La clave de servicio
-se utiliza únicamente en el servidor para insertar el mensaje después de
-verificar Turnstile y aplicar el límite distribuido de Upstash; nunca debe
-exponerse al navegador. Configura el widget Turnstile para los dominios usados
-y `NEXT_PUBLIC_SITE_URL` debe coincidir con el hostname verificado. Sin estas
-variables el formulario no acepta envíos.
+El envío público de contacto requiere `NEXT_PUBLIC_SITE_URL`,
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`,
+`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`,
+`SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL` y
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. En desarrollo, si no se define
+`NEXT_PUBLIC_SITE_URL`, se usa `http://localhost:3000`; se rechaza HTTP fuera
+de `localhost`, y producción requiere una URL HTTPS. Configura Turnstile para
+el hostname exacto de esa URL y obtén las claves desde el panel de Cloudflare.
+Obtén la URL REST y el token desde Upstash Redis y la service role key desde la
+configuración API de Supabase. La clave de servicio y los tokens se usan solo
+en el servidor; nunca deben llevar el prefijo `NEXT_PUBLIC_` ni exponerse al
+navegador. El formulario falla de forma cerrada si falta una credencial o si
+Turnstile, Upstash o Supabase no están disponibles.
 
 ## Base de datos
 

@@ -22,7 +22,7 @@ export default async function PortfolioContent() {
       getPublicProjects(),
       getPublicTestimonials(),
       getPublicCategories("SERVICE"),
-      getPublicCategories("PROJECT"),
+      getPublicCategories(),
     ]);
   const serviceCategoryNames = new Map(
     serviceCategories.map((category) => [category.id, category.name]),

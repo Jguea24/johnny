@@ -5,6 +5,7 @@ import { isIP } from "node:net";
 import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseConfig } from "@/lib/supabase/config";
+import { getConfiguredSiteUrl } from "@/lib/site-url";
 import type { Database } from "@/types/database";
 
 const CONTACT_RATE_LIMIT = 4;
@@ -21,40 +22,72 @@ return count
 type TurnstileResponse = {
   success?: unknown;
   hostname?: unknown;
+  "error-codes"?: unknown;
 };
 
-export function isContactSubmissionConfigured(): boolean {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  let validSiteUrl = false;
-  if (siteUrl) {
+export function getContactSubmissionConfigurationIssues(): string[] {
+  const requiredSettings = [
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+    "TURNSTILE_SECRET_KEY",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  ];
+  const issues = requiredSettings.filter(
+    (name) => !process.env[name]?.trim(),
+  );
+
+  if (!getConfiguredSiteUrl()) {
+    issues.push("NEXT_PUBLIC_SITE_URL (valid HTTPS URL; HTTP localhost in development)");
+  }
+
+  const config = getSupabaseConfig();
+  if (
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() &&
+    !config
+  ) {
+    issues.push("NEXT_PUBLIC_SUPABASE_URL (invalid URL)");
+  }
+
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL?.trim();
+  if (redisUrl) {
     try {
-      const parsedUrl = new URL(siteUrl);
-      validSiteUrl =
-        parsedUrl.protocol === "https:" || parsedUrl.hostname === "localhost";
+      const url = new URL(redisUrl);
+      if (
+        url.protocol !== "https:" ||
+        !url.hostname ||
+        url.username ||
+        url.password ||
+        url.search ||
+        url.hash
+      ) {
+        issues.push("UPSTASH_REDIS_REST_URL (must be a valid HTTPS URL)");
+      }
     } catch {
-      validSiteUrl = false;
+      issues.push("UPSTASH_REDIS_REST_URL (must be a valid HTTPS URL)");
     }
   }
 
-  return Boolean(
-    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() &&
-      process.env.TURNSTILE_SECRET_KEY?.trim() &&
-      validSiteUrl &&
-      process.env.UPSTASH_REDIS_REST_URL?.trim() &&
-      process.env.UPSTASH_REDIS_REST_TOKEN?.trim() &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() &&
-      process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim(),
-  );
+  return [...new Set(issues)];
+}
+
+export function isContactSubmissionConfigured(): boolean {
+  return getContactSubmissionConfigurationIssues().length === 0;
 }
 
 export function getContactFormAvailability(): {
   enabled: boolean;
   turnstileSiteKey: string;
+  configurationIssues: string[];
 } {
-  const enabled = isContactSubmissionConfigured();
+  const configurationIssues = getContactSubmissionConfigurationIssues();
+  const enabled = configurationIssues.length === 0;
   return {
     enabled,
+    configurationIssues,
     turnstileSiteKey: enabled
       ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? ""
       : "",
@@ -69,23 +102,21 @@ function getClientIp(requestHeaders: Headers): string | null {
     .find((candidate): candidate is string => Boolean(candidate && isIP(candidate))) ?? null;
 }
 
-async function verifyTurnstile(token: string): Promise<boolean> {
-  if (!isContactSubmissionConfigured() || !token || token.length > 2048) {
-    return false;
-  }
+type TurnstileVerification =
+  | "verified"
+  | "invalid-captcha"
+  | "unavailable"
+  | "configuration-error";
+
+async function verifyTurnstile(
+  token: string,
+): Promise<TurnstileVerification> {
+  if (!token || token.length > 2048) return "invalid-captcha";
   const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
-  const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!secret || !siteOrigin) return false;
+  const siteUrl = getConfiguredSiteUrl();
+  if (!secret || !siteUrl) return "configuration-error";
 
   try {
-    const configuredOrigin = new URL(siteOrigin);
-    if (
-      configuredOrigin.protocol !== "https:" &&
-      configuredOrigin.hostname !== "localhost"
-    ) {
-      return false;
-    }
-    const expectedHostname = configuredOrigin.hostname;
     const response = await fetch(
       "https://challenges.cloudflare.com/turnstile/v0/siteverify",
       {
@@ -96,19 +127,48 @@ async function verifyTurnstile(token: string): Promise<boolean> {
         signal: AbortSignal.timeout(5000),
       },
     );
-    if (!response.ok) return false;
+    if (!response.ok) return "unavailable";
     const result: TurnstileResponse = await response.json();
-    return result.success === true && result.hostname === expectedHostname;
-  } catch {
-    return false;
+    if (result.success === true) {
+      return result.hostname === siteUrl.hostname
+        ? "verified"
+        : "invalid-captcha";
+    }
+    if (Array.isArray(result["error-codes"])) {
+      const errorCodes = result["error-codes"].filter(
+        (code): code is string => typeof code === "string",
+      );
+      if (
+        errorCodes.includes("invalid-input-secret") ||
+        errorCodes.includes("missing-input-secret") ||
+        errorCodes.includes("bad-request")
+      ) {
+        console.error(
+          `Turnstile rejected its server configuration. Error codes: ${errorCodes.join(", ")}.`,
+        );
+        return "configuration-error";
+      }
+      if (errorCodes.includes("internal-error")) return "unavailable";
+    }
+    return "invalid-captcha";
+  } catch (error) {
+    console.error(
+      `Turnstile verification connection failed. Error type: ${error instanceof Error ? error.name : "unknown"}.`,
+    );
+    return "unavailable";
   }
 }
 
-async function consumeDistributedRateLimit(ip: string): Promise<boolean | null> {
-  if (!isContactSubmissionConfigured()) return null;
+type RateLimitResult =
+  | { status: "allowed"; allowed: boolean }
+  | { status: "unavailable" | "configuration-error" };
+
+async function consumeDistributedRateLimit(
+  ip: string,
+): Promise<RateLimitResult> {
   const endpoint = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
-  if (!endpoint || !token) return null;
+  if (!endpoint || !token) return { status: "configuration-error" };
 
   const key = `contact:rate:${createHash("sha256").update(ip).digest("hex")}`;
   try {
@@ -128,29 +188,48 @@ async function consumeDistributedRateLimit(ip: string): Promise<boolean | null> 
       cache: "no-store",
       signal: AbortSignal.timeout(3000),
     });
-    if (!response.ok) return null;
-    const result: { result?: unknown } = await response.json();
-    if (typeof result.result !== "number" || !Number.isSafeInteger(result.result)) {
-      return null;
+    if (response.status === 401 || response.status === 403) {
+      return { status: "configuration-error" };
     }
-    return result.result <= CONTACT_RATE_LIMIT;
-  } catch {
-    return null;
+    if (!response.ok) return { status: "unavailable" };
+    const result: { result?: unknown; error?: unknown } =
+      await response.json();
+    if (result.error) return { status: "configuration-error" };
+    if (typeof result.result !== "number" || !Number.isSafeInteger(result.result)) {
+      return { status: "unavailable" };
+    }
+    return {
+      status: "allowed",
+      allowed: result.result <= CONTACT_RATE_LIMIT,
+    };
+  } catch (error) {
+    console.error(
+      `Upstash rate-limit connection failed. Error type: ${error instanceof Error ? error.name : "unknown"}.`,
+    );
+    return { status: "unavailable" };
   }
 }
 
 export async function protectContactSubmission(
   token: string,
-): Promise<"allowed" | "invalid-captcha" | "rate-limited" | "unavailable"> {
-  if (!isContactSubmissionConfigured()) return "unavailable";
-  if (!(await verifyTurnstile(token))) return "invalid-captcha";
+): Promise<
+  | "allowed"
+  | "invalid-captcha"
+  | "rate-limited"
+  | "unavailable"
+  | "configuration-error"
+> {
+  if (!isContactSubmissionConfigured()) return "configuration-error";
+
+  const captcha = await verifyTurnstile(token);
+  if (captcha !== "verified") return captcha;
 
   const ip = getClientIp(await headers());
   if (!ip) return "unavailable";
 
-  const allowed = await consumeDistributedRateLimit(ip);
-  if (allowed === null) return "unavailable";
-  return allowed ? "allowed" : "rate-limited";
+  const limit = await consumeDistributedRateLimit(ip);
+  if (limit.status !== "allowed") return limit.status;
+  return limit.allowed ? "allowed" : "rate-limited";
 }
 
 export async function insertPublicContactMessage(message: {
@@ -159,11 +238,18 @@ export async function insertPublicContactMessage(message: {
   phone: string | null;
   subject: string;
   message: string;
-}): Promise<{ success: true } | { success: false; code?: string }> {
+}): Promise<
+  | { success: true }
+  | {
+      success: false;
+      reason: "configuration" | "connection" | "database";
+      code?: string;
+    }
+> {
   const config = getSupabaseConfig();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!isContactSubmissionConfigured() || !config || !serviceRoleKey) {
-    return { success: false };
+    return { success: false, reason: "configuration" };
   }
 
   const supabase = createClient<Database>(config.url.trim(), serviceRoleKey, {
@@ -173,10 +259,43 @@ export async function insertPublicContactMessage(message: {
       persistSession: false,
     },
   });
-  const { error } = await supabase.from("contact_messages").insert({
-    ...message,
-    status: "NUEVO",
-  });
-  if (error) return { success: false, code: error.code };
+  let error;
+  try {
+    ({ error } = await supabase.from("contact_messages").insert({
+      ...message,
+      status: "NUEVO",
+    }));
+  } catch (connectionError) {
+    console.error(
+      `Supabase contact insert connection failed. Error type: ${connectionError instanceof Error ? connectionError.name : "unknown"}.`,
+    );
+    return { success: false, reason: "connection" };
+  }
+  if (error) {
+    const code =
+      "code" in error && typeof error.code === "string"
+        ? error.code
+        : undefined;
+    if (
+      error.name === "FetchError" ||
+      code === "FETCH_ERROR" ||
+      ("status" in error &&
+        typeof error.status === "number" &&
+        error.status >= 500)
+    ) {
+      return { success: false, reason: "connection", code };
+    }
+    if (
+      code === "42P01" ||
+      code === "42501" ||
+      code === "PGRST205" ||
+      code === "PGRST301" ||
+      code === "401" ||
+      code === "403"
+    ) {
+      return { success: false, reason: "configuration", code };
+    }
+    return { success: false, reason: "database", code };
+  }
   return { success: true };
 }

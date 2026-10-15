@@ -53,7 +53,7 @@ function FormField({
         type={type}
         autoComplete={autoComplete}
         required={required}
-        className="min-h-12 w-full rounded-xl border border-white/10 bg-slate-950 px-4 text-white outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-cyan-400"
+        className="field-control"
       />
     </div>
   );
@@ -70,7 +70,7 @@ function SubmitButton({
     <button
       type="submit"
       disabled={disabled}
-      className="min-h-12 w-full rounded-xl bg-cyan-400 px-5 font-semibold text-slate-950 transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-60"
+      className="button-primary w-full"
     >
       {children}
     </button>

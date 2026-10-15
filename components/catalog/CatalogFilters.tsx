@@ -16,7 +16,7 @@ export default function CatalogFilters({
   onQueryChange: (value: string) => void;
 }) {
   return (
-    <div className="mt-8 grid min-w-0 gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:mt-10 sm:grid-cols-[minmax(0,0.65fr)_minmax(0,1fr)] sm:p-5">
+    <div className="surface-card mt-8 grid min-w-0 gap-4 p-4 sm:mt-10 sm:grid-cols-[minmax(0,0.65fr)_minmax(0,1fr)] sm:p-5">
       <div>
         <label
           htmlFor="catalog-category"
@@ -28,7 +28,7 @@ export default function CatalogFilters({
           id="catalog-category"
           value={categoryId}
           onChange={(event) => onCategoryChange(event.target.value)}
-          className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-950 px-3 text-white outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+          className="field-control"
         >
           <option value="">Todas las categorías</option>
           {categories.map((category) => (
@@ -51,7 +51,7 @@ export default function CatalogFilters({
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Buscar por nombre o descripción"
-          className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-950 px-4 text-white outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-cyan-400"
+          className="field-control"
         />
       </div>
     </div>

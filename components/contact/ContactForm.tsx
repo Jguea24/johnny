@@ -9,8 +9,7 @@ import {
 
 const initialState: AuthActionState = {};
 
-const inputClass =
-  "min-h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 text-white outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-cyan-400";
+const inputClass = "field-control";
 
 type TurnstileApi = {
   render: (
@@ -74,8 +73,8 @@ export default function ContactForm({
           className="rounded-xl border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100"
           role="status"
         >
-          El formulario no está disponible porque falta completar la
-          configuración segura del servicio.
+          El formulario está temporalmente fuera de servicio. Puedes contactarme
+          por WhatsApp o volver a intentarlo más tarde.
         </p>
       )}
       <div className="grid gap-5 sm:grid-cols-2">
@@ -179,7 +178,7 @@ export default function ContactForm({
       <button
         type="submit"
         disabled={pending || !enabled}
-        className="min-h-12 w-full rounded-xl bg-cyan-400 px-6 font-semibold text-slate-950 transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        className="button-primary w-full sm:w-auto"
       >
         {pending ? "Enviando…" : "Enviar mensaje"}
       </button>

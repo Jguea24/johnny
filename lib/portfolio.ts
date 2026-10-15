@@ -132,14 +132,13 @@ async function loadCategories(
 }
 
 export async function getPublicCategories(
-  type: PublicCategory["type"],
+  type?: PublicCategory["type"],
 ): Promise<PublicCategory[]> {
   if (!getSupabaseConfig()) return [];
   await io();
   const supabase = await createClient();
-  return loadCategories(
-    supabase.from("categories").select("id,name,type").eq("type", type),
-  );
+  const query = supabase.from("categories").select("id,name,type");
+  return loadCategories(type ? query.eq("type", type) : query);
 }
 
 export async function getPublicServices(): Promise<

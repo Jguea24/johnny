@@ -37,7 +37,7 @@ export default function ProfileForm({
           maxLength={120}
           defaultValue={fullName}
           autoComplete="name"
-          className="min-h-12 w-full rounded-xl border border-white/10 bg-slate-950 px-4 text-white outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+          className="field-control"
         />
       </div>
       <div>
@@ -54,7 +54,7 @@ export default function ProfileForm({
           maxLength={40}
           defaultValue={phone}
           autoComplete="tel"
-          className="min-h-12 w-full rounded-xl border border-white/10 bg-slate-950 px-4 text-white outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+          className="field-control"
         />
       </div>
       <div>
@@ -71,7 +71,7 @@ export default function ProfileForm({
           maxLength={2048}
           defaultValue={avatarUrl}
           autoComplete="url"
-          className="min-h-12 w-full rounded-xl border border-white/10 bg-slate-950 px-4 text-white outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+          className="field-control"
         />
       </div>
       {state.error || state.success ? (
@@ -90,7 +90,7 @@ export default function ProfileForm({
       <button
         type="submit"
         disabled={pending}
-        className="min-h-12 rounded-xl bg-cyan-400 px-6 font-semibold text-slate-950 transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-60"
+        className="button-primary w-full sm:w-auto"
       >
         {pending ? "Guardando…" : "Guardar cambios"}
       </button>

@@ -2,6 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
+import { validateMediaFile } from "@/lib/admin/media-validation";
 import { requireAdmin } from "@/lib/auth/identity";
 import { publicSiteSettingKeys } from "@/lib/site-settings";
 import type {
@@ -16,6 +17,7 @@ import type {
 export type AdminActionState = {
   error?: string;
   success?: string;
+  mainImageUrl?: string;
 };
 
 const idSchema = z.string().uuid("El registro seleccionado no es válido.");
@@ -41,6 +43,18 @@ const messageStatuses = ["NUEVO", "LEIDO", "RESPONDIDO", "ARCHIVADO"] as const s
 const testimonialStatuses = ["DRAFT", "ACTIVE", "INACTIVE"] as const satisfies readonly TestimonialStatus[];
 
 const allowedPublicSettingKeys = new Set<string>(publicSiteSettingKeys);
+const projectMediaBucket = "site-media";
+type AdminSupabaseClient = Awaited<ReturnType<typeof requireAdmin>>["supabase"];
+
+async function removeUploadedProjectImage(
+  supabase: AdminSupabaseClient,
+  path: string,
+) {
+  const { error } = await supabase.storage.from(projectMediaBucket).remove([path]);
+  if (error) {
+    console.error(`Project image rollback failed. Storage status: ${error.statusCode ?? "unknown"}.`);
+  }
+}
 
 function value(formData: FormData, key: string): string {
   const field = formData.get(key);
@@ -147,6 +161,7 @@ export async function adminMutationAction(
   const section = value(formData, "section");
   const recordId = value(formData, "record_id");
   const { supabase } = await requireAdmin();
+  let uploadedProjectImagePath: string | null = null;
   try {
     if (section === "servicios") {
       if (!["create", "update", "delete"].includes(operation)) {
@@ -230,13 +245,32 @@ export async function adminMutationAction(
           return { error: "No se pudo eliminar el proyecto. Verifica los permisos." };
         }
       } else {
+        const selectedFileEntry = formData.get("main_image_file");
+        const selectedImage =
+          selectedFileEntry instanceof File && selectedFileEntry.size > 0
+            ? selectedFileEntry
+            : null;
+        const fileValidation = selectedImage
+          ? await validateMediaFile(selectedImage, "image")
+          : null;
+        if (fileValidation && !fileValidation.success) {
+          return { error: fileValidation.error };
+        }
         const title = requiredText(2, 180).safeParse(value(formData, "title"));
         const slug = slugSchema.safeParse(value(formData, "slug"));
         const shortDescription = requiredText(3, 500).safeParse(value(formData, "short_description"));
         const description = requiredText(3, 12000).safeParse(value(formData, "description"));
         const categoryId = parseCategoryId(value(formData, "category_id"));
-        const status = z.enum(projectStatuses).safeParse(value(formData, "status"));
-        const mainImage = optionalUrl(value(formData, "main_image"), "La imagen principal");
+        const projectIntent = value(formData, "project_intent");
+        if (projectIntent && projectIntent !== "DRAFT" && projectIntent !== "PUBLISHED") {
+          return { error: "La acción del proyecto no es válida." };
+        }
+        const status = z.enum(projectStatuses).safeParse(
+          projectIntent || value(formData, "status"),
+        );
+        const mainImage = selectedImage
+          ? { success: true as const, data: null }
+          : optionalUrl(value(formData, "main_image"), "La imagen principal");
         const demoUrl = optionalUrl(value(formData, "demo_url"), "La URL de demostración");
         const repositoryUrl = optionalUrl(value(formData, "repository_url"), "La URL del repositorio");
         const technologies = value(formData, "technologies")
@@ -254,19 +288,46 @@ export async function adminMutationAction(
             .from("categories")
             .select("id")
             .eq("id", categoryId.data)
-            .eq("type", "PROJECT")
             .maybeSingle();
-          if (error || !category) {
-            return { error: "Selecciona una categoría válida para proyectos." };
+          if (error) {
+            console.error(`Admin project category validation failed. Supabase code: ${error.code}`);
+            return { error: "No se pudo validar la categoría seleccionada. Inténtalo de nuevo." };
+          }
+          if (!category) {
+            return { error: "La categoría seleccionada ya no existe. Elige otra." };
           }
         }
+        let projectId: string;
+        if (operation === "create") {
+          projectId = crypto.randomUUID();
+        } else {
+          const parsedId = idSchema.safeParse(recordId);
+          if (!parsedId.success) return { error: "El proyecto seleccionado no es válido." };
+          projectId = parsedId.data;
+        }
+        let mainImageUrl = mainImage.data;
+        if (selectedImage && fileValidation?.success) {
+          const path = `projects/${projectId}/${crypto.randomUUID()}.${fileValidation.extension}`;
+          const { error } = await supabase.storage.from(projectMediaBucket).upload(path, selectedImage, {
+            cacheControl: "31536000",
+            contentType: fileValidation.mimeType,
+            upsert: false,
+          });
+          if (error) {
+            console.error(`Admin project image upload failed. Storage status: ${error.statusCode ?? "unknown"}.`);
+            return { error: "No se pudo subir la imagen. Comprueba el acceso al almacenamiento e inténtalo de nuevo." };
+          }
+          uploadedProjectImagePath = path;
+          mainImageUrl = supabase.storage.from(projectMediaBucket).getPublicUrl(path).data.publicUrl;
+        }
         const input = {
+          id: projectId,
           title: title.data,
           slug: slug.data,
           short_description: shortDescription.data,
           description: description.data,
           category_id: categoryId.data,
-          main_image: mainImage.data,
+          main_image: mainImageUrl,
           demo_url: demoUrl.data,
           repository_url: repositoryUrl.data,
           technologies,
@@ -276,18 +337,24 @@ export async function adminMutationAction(
         if (operation === "create") {
           const { error } = await supabase.from("projects").insert(input);
           if (error) {
+            if (uploadedProjectImagePath) await removeUploadedProjectImage(supabase, uploadedProjectImagePath);
+            uploadedProjectImagePath = null;
             console.error(`Admin project create failed. Supabase code: ${error.code}`);
             return { error: "No se pudo crear el proyecto. Comprueba que el slug no esté en uso." };
           }
         } else {
-          const id = idSchema.safeParse(recordId);
-          if (!id.success) return { error: "El proyecto seleccionado no es válido." };
-          const { data, error } = await supabase.from("projects").update(input).eq("id", id.data).select("id").maybeSingle();
+          const { data, error } = await supabase.from("projects").update(input).eq("id", projectId).select("id").maybeSingle();
           if (error || !data) {
+            if (uploadedProjectImagePath) await removeUploadedProjectImage(supabase, uploadedProjectImagePath);
+            uploadedProjectImagePath = null;
             console.error(`Admin project update failed. Supabase code: ${error?.code ?? "NO_ROW"}`);
             return { error: "No se pudo actualizar el proyecto. Comprueba que el slug no esté en uso." };
           }
         }
+        const savedMainImageUrl = mainImageUrl ?? "";
+        uploadedProjectImagePath = null;
+        await revalidateAdminPaths(section);
+        return { success: "El proyecto se guardó correctamente.", mainImageUrl: savedMainImageUrl };
       }
       await revalidateAdminPaths(section);
       return { success: "El proyecto se guardó correctamente." };
@@ -522,6 +589,9 @@ export async function adminMutationAction(
 
     return { error: "Sección administrativa desconocida." };
   } catch (error) {
+    if (uploadedProjectImagePath) {
+      await removeUploadedProjectImage(supabase, uploadedProjectImagePath);
+    }
     return actionError(error, "No fue posible completar la operación administrativa.");
   }
 }

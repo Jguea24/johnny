@@ -14,11 +14,12 @@ export default async function ContactPage() {
   const settings = await getPublicSiteSettings();
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-slate-950 text-white">
       <Navbar siteTitle={settings.title} />
-      <div className="h-[calc(5rem+env(safe-area-inset-top))]" />
+      <main>
       <Contact settings={settings} />
+      </main>
       <Footer settings={settings} />
-    </main>
+    </div>
   );
 }

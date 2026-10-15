@@ -22,12 +22,12 @@ export default function Testimonials({
       id="testimonios"
       className="border-t border-white/10 bg-slate-950"
     >
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+      <div className="page-container section-space">
         <div className="max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-400">
+          <p className="section-eyebrow">
             Testimonios
           </p>
-          <h2 className="mt-4 text-[clamp(2rem,5vw,3rem)] font-bold">
+          <h2 className="section-title">
             Experiencias compartidas.
           </h2>
         </div>
@@ -37,7 +37,7 @@ export default function Testimonials({
             {testimonials.data.map((testimonial) => (
               <article
                 key={testimonial.id}
-                className="rounded-2xl border border-white/10 bg-white/5 p-6"
+                className="surface-card p-6 sm:p-7"
               >
                 <blockquote className="leading-7 text-slate-300">
                   &ldquo;{testimonial.comment}&rdquo;

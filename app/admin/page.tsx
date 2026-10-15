@@ -44,12 +44,12 @@ async function AdminDashboardContent() {
   };
 
   return (
-    <main>
+    <main className="space-y-8">
       <header>
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-400">
+        <p className="section-eyebrow">
           Panel
         </p>
-        <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Resumen general</h1>
+        <h1 className="section-title">Resumen general</h1>
         <p className="mt-3 text-slate-400">
           Actividad y contenido consultados desde la base de datos.
         </p>
@@ -72,7 +72,7 @@ async function AdminDashboardContent() {
           <Link
             key={card.key}
             href={card.href}
-            className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition hover:border-cyan-300/40 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+            className="surface-card p-5 transition hover:border-cyan-300/35 hover:bg-cyan-300/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
           >
             <p className="text-sm text-slate-400">{card.label}</p>
             <p className="mt-3 text-3xl font-bold text-white">

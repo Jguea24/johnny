@@ -4,10 +4,31 @@ export type SupabaseConfig = {
 };
 
 export function getSupabaseConfig(): SupabaseConfig | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const publishableKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
 
   if (!url || !publishableKey) {
+    return null;
+  }
+
+  try {
+    const parsedUrl = new URL(url);
+    const isLocalDevelopment =
+      process.env.NODE_ENV === "development" &&
+      parsedUrl.protocol === "http:" &&
+      parsedUrl.hostname === "localhost";
+    if (
+      (parsedUrl.protocol !== "https:" && !isLocalDevelopment) ||
+      !parsedUrl.hostname ||
+      parsedUrl.username ||
+      parsedUrl.password ||
+      parsedUrl.search ||
+      parsedUrl.hash
+    ) {
+      return null;
+    }
+  } catch {
     return null;
   }
 

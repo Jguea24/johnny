@@ -25,8 +25,9 @@ export default async function Home() {
   const settings = await getPublicSiteSettings();
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-slate-950 text-white">
       <Navbar siteTitle={settings.title} />
+      <main>
       <Suspense fallback={<Hero />}>
         <PublicHero />
       </Suspense>
@@ -37,7 +38,8 @@ export default async function Home() {
         <PortfolioContent />
       </Suspense>
       <Contact settings={settings} />
+      </main>
       <Footer settings={settings} />
-    </main>
+    </div>
   );
 }

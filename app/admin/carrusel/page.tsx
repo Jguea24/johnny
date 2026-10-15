@@ -34,10 +34,10 @@ export default async function AdminCarouselPage() {
     return (
       <main>
         <header className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-400">
+          <p className="section-eyebrow">
             Administración
           </p>
-          <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Carrusel</h1>
+          <h1 className="section-title">Carrusel</h1>
         </header>
         <p
           className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-5 text-sm leading-6 text-rose-200"
@@ -66,10 +66,10 @@ export default async function AdminCarouselPage() {
   return (
     <main>
       <header className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-400">
+        <p className="section-eyebrow">
           Administración
         </p>
-        <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Carrusel</h1>
+        <h1 className="section-title">Carrusel</h1>
         <p className="mt-3 max-w-3xl text-slate-400">
           Gestiona el contenido multimedia de portada. Solo las diapositivas
           activas se muestran públicamente.

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import ServiceCatalog from "@/components/catalog/ServiceCatalog";
 import { getPublicCategories, getPublicServices } from "@/lib/portfolio";
+import PublicPageFrame from "@/components/layout/PublicPageFrame";
+import { getPublicSiteSettings } from "@/lib/site-settings";
 
 export const metadata: Metadata = {
   title: "Servicios tecnológicos",
@@ -11,13 +13,15 @@ export const metadata: Metadata = {
 };
 
 async function ServicesPageContent() {
-  const [services, categories] = await Promise.all([
+  const [services, categories, settings] = await Promise.all([
     getPublicServices(),
     getPublicCategories("SERVICE"),
+    getPublicSiteSettings(),
   ]);
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <PublicPageFrame settings={settings}>
+      <main className="min-h-screen bg-transparent text-white">
       <section className="border-b border-white/10 bg-gradient-to-b from-cyan-950/30 to-slate-950">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
           <Link href="/#servicios" className="inline-flex min-h-11 items-center text-sm text-cyan-300 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
@@ -38,7 +42,8 @@ async function ServicesPageContent() {
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
         <ServiceCatalog services={services} categories={categories} />
       </section>
-    </main>
+      </main>
+    </PublicPageFrame>
   );
 }
 

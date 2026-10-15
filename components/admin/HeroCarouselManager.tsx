@@ -41,11 +41,10 @@ const blankDraft: SlideDraft = {
   is_active: false,
 };
 
-const fieldClass =
-  "min-h-11 w-full rounded-lg border border-white/10 bg-slate-950 px-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-cyan-400";
+const fieldClass = "field-control";
 const labelClass = "mb-1.5 block text-xs font-medium text-slate-300";
 const buttonClass =
-  "inline-flex min-h-10 items-center justify-center rounded-lg border border-white/15 px-3 text-sm font-medium text-slate-200 transition hover:border-cyan-300/50 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-50";
+  "button-secondary min-h-11 rounded-lg px-3 disabled:opacity-50";
 
 function ResultMessage({ state }: { state: HeroActionState }) {
   if (!state.error && !state.success && !state.warning) return null;
@@ -537,7 +536,7 @@ function CarouselSettingsForm({
   return (
     <form
       action={action}
-      className="grid gap-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:grid-cols-2 sm:p-6"
+      className="surface-card grid gap-5 p-5 sm:grid-cols-2 sm:p-6"
     >
       <div className="sm:col-span-2">
         <h2 className="text-lg font-semibold text-white">

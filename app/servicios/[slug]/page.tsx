@@ -6,6 +6,8 @@ import { notFound } from "next/navigation";
 import { getPublicCategories, getPublicService } from "@/lib/portfolio";
 import { isValidSlug } from "@/lib/slug";
 import ServiceRequestForm from "@/components/requests/ServiceRequestForm";
+import PublicPageFrame from "@/components/layout/PublicPageFrame";
+import { getPublicSiteSettings } from "@/lib/site-settings";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -23,12 +25,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 async function ServiceDetailContent({ params }: PageProps) {
   const { slug } = await params;
   if (!isValidSlug(slug)) notFound();
-  const result = await getPublicService(slug);
+  const [result, settings] = await Promise.all([
+    getPublicService(slug),
+    getPublicSiteSettings(),
+  ]);
   if (result.status === "not-found") notFound();
   if (result.status !== "ready") {
     return (
-      <main className="min-h-screen bg-slate-950 px-4 py-16 text-white sm:px-6 sm:py-24">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-8">
+      <PublicPageFrame settings={settings}>
+      <main className="min-h-screen bg-transparent px-4 py-16 text-white sm:px-6 sm:py-24">
+        <div className="surface-card mx-auto max-w-3xl p-5 sm:p-8">
           <h1 className="text-2xl font-semibold">Servicio no disponible</h1>
           <p className="mt-3 text-slate-300" role="alert">
             No fue posible consultar este servicio en este momento. Inténtalo
@@ -42,6 +48,7 @@ async function ServiceDetailContent({ params }: PageProps) {
           </Link>
         </div>
       </main>
+      </PublicPageFrame>
     );
   }
 
@@ -50,7 +57,8 @@ async function ServiceDetailContent({ params }: PageProps) {
   const category = categories.find((item) => item.id === service.category_id);
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <PublicPageFrame settings={settings}>
+    <main className="min-h-screen bg-transparent text-white">
       <article className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <Link
           href="/servicios"
@@ -97,7 +105,7 @@ async function ServiceDetailContent({ params }: PageProps) {
         </div>
         <section
           id="solicitar"
-          className="mt-12 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] p-4 sm:p-8"
+          className="surface-card mt-12 border-cyan-300/20 p-4 sm:p-8"
         >
           <h2 className="text-xl font-semibold">¿Te interesa este servicio?</h2>
           <p className="mt-2 text-slate-300">
@@ -112,6 +120,7 @@ async function ServiceDetailContent({ params }: PageProps) {
         </section>
       </article>
     </main>
+    </PublicPageFrame>
   );
 }
 

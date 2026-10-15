@@ -48,7 +48,7 @@ export default function ServiceCatalog({
               {visibleServices.map((service) => (
                 <article
                   key={service.id}
-                  className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition duration-300 hover:-translate-y-1 hover:border-cyan-400/40 motion-reduce:transform-none motion-reduce:transition-none"
+                  className="surface-card flex flex-col p-6 transition duration-300 hover:-translate-y-1 hover:border-cyan-300/35 motion-reduce:transform-none motion-reduce:transition-none"
                 >
                   <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-cyan-500/10 text-3xl text-cyan-200">
                     {service.image_url ? (
@@ -88,7 +88,7 @@ export default function ServiceCatalog({
                   ) : null}
                   <Link
                     href={`/servicios/${encodeURIComponent(service.slug)}`}
-                    className="mt-4 inline-flex min-h-11 items-center rounded-sm font-semibold text-cyan-300 outline-none hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-300"
+                    className="mt-auto inline-flex min-h-12 items-center pt-5 font-semibold text-cyan-200 outline-none hover:text-white focus-visible:ring-2 focus-visible:ring-cyan-300"
                   >
                     Ver detalles <span aria-hidden="true">→</span>
                   </Link>

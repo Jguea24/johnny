@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 export default function Navbar({ siteTitle }: { siteTitle: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
   const navigation = [
     { href: "/#inicio", label: "Inicio" },
     { href: "/#sobre-mi", label: "Sobre mí" },
@@ -13,11 +15,11 @@ export default function Navbar({ siteTitle }: { siteTitle: string }) {
   ];
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-slate-950/90 pt-[env(safe-area-inset-top)] backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/85 pt-[env(safe-area-inset-top)] shadow-lg shadow-black/10 backdrop-blur-xl">
       <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:flex-nowrap lg:px-8">
         <Link
           href="/"
-          className="min-w-0 max-w-[70%] break-words text-xl font-bold tracking-tight text-white lg:max-w-none"
+          className="min-w-0 max-w-[70%] break-words text-lg font-bold tracking-tight text-white sm:text-xl lg:max-w-none"
         >
           {siteTitle}<span className="text-cyan-400">.</span>
         </Link>
@@ -27,7 +29,8 @@ export default function Navbar({ siteTitle }: { siteTitle: string }) {
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm text-slate-300 transition hover:text-cyan-400"
+              aria-current={!item.href.includes("#") && pathname === item.href ? "page" : undefined}
+              className={`text-sm transition hover:text-cyan-200 ${!item.href.includes("#") && pathname === item.href ? "font-semibold text-white" : "text-slate-300"}`}
             >
               {item.label}
             </Link>
@@ -41,7 +44,7 @@ export default function Navbar({ siteTitle }: { siteTitle: string }) {
 
           <Link
             href="/contacto"
-            className="rounded-full bg-cyan-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
+            className="button-primary min-h-11 rounded-full px-5"
           >
             Contacto
           </Link>
@@ -53,7 +56,7 @@ export default function Navbar({ siteTitle }: { siteTitle: string }) {
           aria-controls="mobile-navigation"
           aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
           onClick={() => setMenuOpen((open) => !open)}
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-white/15 text-slate-200 transition hover:border-cyan-300/50 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 lg:hidden"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.03] text-slate-200 transition hover:border-cyan-300/50 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 lg:hidden"
         >
           <span aria-hidden="true" className="text-xl leading-none">
             {menuOpen ? "×" : "☰"}
@@ -74,7 +77,8 @@ export default function Navbar({ siteTitle }: { siteTitle: string }) {
               key={item.href}
               href={item.href}
               onClick={() => setMenuOpen(false)}
-              className="rounded-lg px-3 py-3 text-sm text-slate-200 transition hover:bg-white/5 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+              aria-current={!item.href.includes("#") && pathname === item.href ? "page" : undefined}
+              className={`rounded-xl px-3 py-3 text-sm transition hover:bg-white/5 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${!item.href.includes("#") && pathname === item.href ? "bg-white/[0.05] font-semibold text-white" : "text-slate-200"}`}
             >
               {item.label}
             </Link>

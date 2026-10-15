@@ -127,7 +127,10 @@ async function loadSection(section: Section): Promise<{
         .select("id,title,slug,short_description,description,category_id,main_image,demo_url,repository_url,technologies,status,featured,created_at")
         .order("created_at", { ascending: false })
         .limit(200),
-      supabase.from("categories").select("id,name,type").eq("type", "PROJECT"),
+      supabase
+        .from("categories")
+        .select("id,name,type")
+        .order("name", { ascending: true }),
     ]);
     if (projectsResult.error) throw new Error(`ADMIN_QUERY:projects:${projectsResult.error.code}`);
     if (categoriesResult.error) throw new Error(`ADMIN_QUERY:project_categories:${categoriesResult.error.code}`);
@@ -255,8 +258,13 @@ async function AdminSectionContent({ params }: PageProps) {
   try {
     loaded = await loadSection(section);
   } catch (error) {
-    const errorType = error instanceof Error ? error.name : "UnknownError";
-    console.error(`Unable to load admin section ${section}. Error type: ${errorType}`);
+    const errorMessage = error instanceof Error ? error.message : "UnknownError";
+    const categoryQueryError = errorMessage.match(/^ADMIN_QUERY:project_categories:([A-Z0-9]+)$/);
+    console.error(
+      categoryQueryError
+        ? `Unable to load project categories. Supabase code: ${categoryQueryError[1]}`
+        : `Unable to load admin section ${section}. Error type: ${error instanceof Error ? error.name : "UnknownError"}`,
+    );
     return (
       <main>
         <header className="mb-8">
@@ -280,10 +288,10 @@ async function AdminSectionContent({ params }: PageProps) {
   return (
     <main>
       <header className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-400">
+        <p className="section-eyebrow">
           Administración
         </p>
-        <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
+          <h1 className="section-title">
           {sectionMeta[section].title}
         </h1>
         <p className="mt-3 text-slate-400">

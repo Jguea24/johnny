@@ -12,8 +12,7 @@ import type { Database } from "@/types/database";
 
 type TeamMember = Database["public"]["Tables"]["team_members"]["Row"];
 
-const inputClass =
-  "min-h-11 w-full min-w-0 rounded-lg border border-white/10 bg-slate-950 px-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-cyan-400";
+const inputClass = "field-control min-w-0";
 const labelClass = "mb-1.5 block text-xs font-medium text-slate-300";
 
 function ResultMessage({ state }: { state: TeamActionState }) {
@@ -468,7 +467,7 @@ export default function TeamManager({ members }: { members: TeamMember[] }) {
 
   return (
     <div className="space-y-9">
-      <section className="rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-5 sm:p-6">
+      <section className="surface-card border-cyan-300/20 p-5 sm:p-6">
         <h2 className="text-xl font-semibold text-white">Perfil del fundador</h2>
         <p className="mb-5 mt-1 text-sm leading-6 text-slate-400">
           El nombre y cargo identifican la marca y no se pueden cambiar aquí.
@@ -490,7 +489,7 @@ export default function TeamManager({ members }: { members: TeamMember[] }) {
         )}
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+      <section className="surface-card p-5 sm:p-6">
         <h2 className="text-xl font-semibold text-white">Añadir colaborador</h2>
         <p className="mb-5 mt-1 text-sm leading-6 text-slate-400">
           Guarda un borrador mientras recopilas los datos reales. El perfil solo
@@ -525,7 +524,7 @@ export default function TeamManager({ members }: { members: TeamMember[] }) {
             {collaborators.map((member) => (
               <article
                 key={`${member.id}-${member.updated_at}`}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
+                className="surface-card p-5 sm:p-6"
               >
                 <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
                   <div className="flex min-w-0 items-start gap-4">

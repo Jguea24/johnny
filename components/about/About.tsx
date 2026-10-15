@@ -106,7 +106,7 @@ function ProfileCard({
         </h3>
         <p className="mt-1.5 max-w-[34ch] break-words text-sm font-medium leading-5 text-cyan-100">
           {founder
-            ? "Fundador y CEO · Líder tecnológico"
+            ? "Fundador · Líder tecnológico"
             : member.position}
         </p>
         {!founder ? (
@@ -159,16 +159,16 @@ export default function About({
     <section
       id="sobre-mi"
       aria-labelledby="team-heading"
-      className="border-t border-white/10 bg-slate-900"
+      className="border-t border-white/10 bg-[radial-gradient(ellipse_at_50%_0%,rgba(8,145,178,0.09),transparent_55%),#0a1624]"
     >
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+      <div className="page-container section-space">
         <header className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-400">
+          <p className="section-eyebrow">
             SOBRE MÍ Y MI EQUIPO
           </p>
           <h2
             id="team-heading"
-            className="mt-4 text-[clamp(2rem,5vw,3rem)] font-bold tracking-tight text-white"
+            className="section-title text-balance"
           >
             Una visión. Un equipo. Soluciones que transforman.
           </h2>
@@ -210,7 +210,7 @@ export default function About({
                 id="founder-heading"
                 className="mb-4 text-center text-lg font-semibold text-white"
               >
-                Fundador y CEO
+                Fundador y líder tecnológico
               </h3>
               {team.founder ? (
                 <ProfileCard

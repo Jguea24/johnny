@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getPublicCategories, getPublicProject } from "@/lib/portfolio";
 import { isValidSlug } from "@/lib/slug";
+import PublicPageFrame from "@/components/layout/PublicPageFrame";
+import { getPublicSiteSettings } from "@/lib/site-settings";
+import ProjectImage from "@/components/portfolio/ProjectImage";
+import { parseYouTubeLink, safeHttpUrl } from "@/lib/portfolio-links";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -22,12 +25,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 async function ProjectDetailContent({ params }: PageProps) {
   const { slug } = await params;
   if (!isValidSlug(slug)) notFound();
-  const result = await getPublicProject(slug);
+  const [result, settings] = await Promise.all([
+    getPublicProject(slug),
+    getPublicSiteSettings(),
+  ]);
   if (result.status === "not-found") notFound();
   if (result.status !== "ready") {
     return (
-      <main className="min-h-screen bg-slate-950 px-4 py-16 text-white sm:px-6 sm:py-24">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-8">
+      <PublicPageFrame settings={settings}>
+      <main className="min-h-screen bg-transparent px-4 py-16 text-white sm:px-6 sm:py-24">
+        <div className="surface-card mx-auto max-w-3xl p-5 sm:p-8">
           <h1 className="text-2xl font-semibold">Proyecto no disponible</h1>
           <p className="mt-3 text-slate-300" role="alert">
             No fue posible consultar este proyecto en este momento. Inténtalo
@@ -41,18 +48,23 @@ async function ProjectDetailContent({ params }: PageProps) {
           </Link>
         </div>
       </main>
+      </PublicPageFrame>
     );
   }
 
   const project = result.data;
-  const categories = await getPublicCategories("PROJECT");
+  const youtube = parseYouTubeLink(project.demo_url);
+  const demoUrl = safeHttpUrl(project.demo_url);
+  const repositoryUrl = safeHttpUrl(project.repository_url);
+  const categories = await getPublicCategories();
   const category = categories.find((item) => item.id === project.category_id);
   const gallery = project.images.filter(
     (image) => image.image_url !== project.main_image,
   );
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <PublicPageFrame settings={settings}>
+    <main className="min-h-screen bg-transparent text-white">
       <article className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <Link
           href="/proyectos"
@@ -60,15 +72,12 @@ async function ProjectDetailContent({ params }: PageProps) {
         >
           ← Todos los proyectos
         </Link>
-        {project.main_image ? (
-          <div className="relative mt-8 aspect-[16/10] overflow-hidden rounded-2xl border border-white/10 sm:aspect-[16/9]">
-            <Image
-              src={project.main_image}
-              alt={project.title}
-              fill
-              unoptimized
+        {project.main_image || youtube?.thumbnailUrl ? (
+          <div className="relative mt-8 aspect-video overflow-hidden rounded-2xl border border-white/10">
+            <ProjectImage
+              src={project.main_image || youtube?.thumbnailUrl}
+              alt={`Imagen de ${project.title}`}
               sizes="(max-width: 768px) 100vw, 64rem"
-              className="object-cover"
             />
           </div>
         ) : null}
@@ -82,6 +91,11 @@ async function ProjectDetailContent({ params }: PageProps) {
             {project.featured ? (
               <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-medium text-cyan-100">
                 Proyecto destacado
+              </span>
+            ) : null}
+            {youtube ? (
+              <span className="rounded-full border border-rose-300/20 bg-rose-300/10 px-3 py-1 text-xs font-medium text-rose-100">
+                Tutorial de YouTube
               </span>
             ) : null}
           </div>
@@ -112,21 +126,21 @@ async function ProjectDetailContent({ params }: PageProps) {
             </ul>
           </section>
         ) : null}
-        {project.demo_url || project.repository_url ? (
+        {demoUrl || repositoryUrl ? (
           <nav aria-label="Enlaces del proyecto" className="mt-8 flex flex-wrap gap-5">
-            {project.demo_url ? (
+            {demoUrl ? (
               <a
-                href={project.demo_url}
+                href={demoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-cyan-300 hover:text-cyan-200"
               >
-                Ver demostración <span aria-hidden="true">↗</span>
+                {youtube ? "Ver tutorial en YouTube" : "Ver demostración"} <span aria-hidden="true">↗</span>
               </a>
             ) : null}
-            {project.repository_url ? (
+            {repositoryUrl ? (
               <a
-                href={project.repository_url}
+                href={repositoryUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-cyan-300 hover:text-cyan-200"
@@ -143,17 +157,11 @@ async function ProjectDetailContent({ params }: PageProps) {
             </h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {gallery.map((image) => (
-                <div
-                  key={image.id}
-                  className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10"
-                >
-                  <Image
+                <div key={image.id} className="relative aspect-video overflow-hidden rounded-xl border border-white/10">
+                  <ProjectImage
                     src={image.image_url}
-                    alt={image.alt_text || project.title}
-                    fill
-                    unoptimized
+                    alt={image.alt_text || `Imagen de ${project.title}`}
                     sizes="(max-width: 640px) 100vw, 50vw"
-                    className="object-cover"
                   />
                 </div>
               ))}
@@ -162,6 +170,7 @@ async function ProjectDetailContent({ params }: PageProps) {
         ) : null}
       </article>
     </main>
+    </PublicPageFrame>
   );
 }
 

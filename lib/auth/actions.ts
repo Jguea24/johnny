@@ -12,9 +12,11 @@ import { getAuthenticatedProfileRole } from "@/lib/auth/identity";
 import { getAuthenticatedDestination, getSafeNextPath } from "@/lib/auth/redirects";
 import {
   isContactSubmissionConfigured,
+  getContactSubmissionConfigurationIssues,
   insertPublicContactMessage,
   protectContactSubmission,
 } from "@/lib/contact/server";
+import { getConfiguredSiteUrl } from "@/lib/site-url";
 
 export type AuthActionState = {
   error?: string;
@@ -78,19 +80,11 @@ function getValue(formData: FormData, name: string): FormDataEntryValue | null {
 }
 
 async function getConfiguredSiteOrigin(): Promise<string> {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!configured && process.env.NODE_ENV === "development") {
-    return "http://localhost:3000";
-  }
-  if (!configured) {
-    throw new Error("NEXT_PUBLIC_SITE_URL is required for Auth email redirects.");
-  }
-  const url = new URL(configured);
-  if (
-    !["https:", "http:"].includes(url.protocol) ||
-    (url.protocol === "http:" && url.hostname !== "localhost")
-  ) {
-    throw new Error("NEXT_PUBLIC_SITE_URL must use HTTPS.");
+  const url = getConfiguredSiteUrl();
+  if (!url) {
+    throw new Error(
+      "NEXT_PUBLIC_SITE_URL must be a valid HTTPS origin (HTTP localhost is allowed only in development).",
+    );
   }
   return url.origin;
 }
@@ -366,8 +360,12 @@ export async function sendContactMessageAction(
     return { success: "Gracias. Tu mensaje fue recibido." };
   }
   if (!isContactSubmissionConfigured()) {
+    console.error(
+      `Contact form configuration is incomplete. Missing or invalid settings: ${getContactSubmissionConfigurationIssues().join(", ")}.`,
+    );
     return {
-      error: "El formulario no está disponible temporalmente. Inténtalo más tarde.",
+      error:
+        "El formulario no está configurado por completo. Contacta al administrador del sitio.",
     };
   }
 
@@ -385,7 +383,14 @@ export async function sendContactMessageAction(
   }
   if (protection === "unavailable") {
     return {
-      error: "El formulario no está disponible temporalmente. Inténtalo más tarde.",
+      error:
+        "No se pudo conectar con los servicios de protección del formulario. Inténtalo más tarde.",
+    };
+  }
+  if (protection === "configuration-error") {
+    return {
+      error:
+        "La configuración de seguridad del formulario no es válida. Contacta al administrador del sitio.",
     };
   }
 
@@ -398,11 +403,15 @@ export async function sendContactMessageAction(
   });
   if (!result.success) {
     console.error(
-      `Unable to save contact message. Supabase code: ${result.code ?? "CONFIGURATION"}`,
+      `Unable to save contact message. Supabase result: ${result.reason}; code: ${result.code ?? "none"}.`,
     );
     return {
       error:
-        "No se pudo enviar el mensaje. Inténtalo nuevamente más tarde.",
+        result.reason === "connection"
+          ? "No se pudo conectar con el servicio de almacenamiento. Inténtalo más tarde."
+          : result.reason === "configuration"
+            ? "El almacenamiento del formulario no está configurado correctamente. Contacta al administrador del sitio."
+            : "No se pudo guardar el mensaje. Inténtalo nuevamente más tarde.",
     };
   }
   revalidatePath("/admin/mensajes");

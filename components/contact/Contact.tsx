@@ -12,13 +12,13 @@ export default function Contact({
   const { enabled, turnstileSiteKey } = getContactFormAvailability();
 
   return (
-    <section id="contacto" className="border-t border-white/10 bg-slate-900">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-16 sm:gap-12 sm:px-6 sm:py-20 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
-        <div className="min-w-0 lg:sticky lg:top-28 lg:self-start">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-400">
+    <section id="contacto" className="border-t border-white/10 bg-[radial-gradient(ellipse_at_85%_15%,rgba(8,145,178,0.1),transparent_36%),#0a1624]">
+      <div className="page-container section-space grid gap-8 sm:gap-12 lg:grid-cols-[0.82fr_1.18fr]">
+        <div className="min-w-0 lg:self-center">
+          <p className="section-eyebrow">
             Contacto
           </p>
-          <h2 className="mt-4 text-[clamp(2rem,5vw,3rem)] font-bold text-white">
+          <h2 className="section-title">
             Hablemos de tu idea.
           </h2>
           <p className="mt-6 max-w-xl text-lg leading-8 text-slate-300">
@@ -57,7 +57,7 @@ export default function Contact({
             <WhatsAppLink className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 font-semibold text-emerald-200 transition-colors hover:bg-emerald-400/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300" />
           </div>
         </div>
-        <div className="min-w-0 rounded-2xl border border-white/10 bg-slate-950 p-4 sm:p-8">
+        <div className="surface-card min-w-0 p-5 sm:p-8">
           <h3 className="text-xl font-semibold text-white">Envíame un mensaje</h3>
           <p className="mt-2 text-sm leading-6 text-slate-400">
             Los campos marcados son obligatorios. La información se utilizará

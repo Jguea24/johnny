@@ -8,8 +8,7 @@ import {
 } from "@/lib/auth/actions";
 
 const initialState: AuthActionState = {};
-const inputClass =
-  "min-h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 text-white outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-cyan-400";
+const inputClass = "field-control";
 
 export default function ServiceRequestForm({
   serviceId,
@@ -140,7 +139,7 @@ export default function ServiceRequestForm({
       <button
         type="submit"
         disabled={pending}
-        className="min-h-12 rounded-xl bg-cyan-400 px-6 font-semibold text-slate-950 transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-60"
+        className="button-primary w-full sm:w-auto"
       >
         {pending ? "Enviando solicitud…" : "Enviar solicitud"}
       </button>
