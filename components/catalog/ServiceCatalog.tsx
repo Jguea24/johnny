@@ -48,9 +48,9 @@ export default function ServiceCatalog({
               {visibleServices.map((service) => (
                 <article
                   key={service.id}
-                  className="surface-card flex flex-col p-6 transition duration-300 hover:-translate-y-1 hover:border-cyan-300/35 motion-reduce:transform-none motion-reduce:transition-none"
+                  className="surface-card group flex flex-col overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-cyan-300/35 motion-reduce:transform-none motion-reduce:transition-none"
                 >
-                  <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-cyan-500/10 text-3xl text-cyan-200">
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-cyan-500/20 via-slate-900 to-indigo-500/20 text-cyan-200">
                     {service.image_url ? (
                       <div className="relative h-full w-full">
                         <Image
@@ -58,8 +58,8 @@ export default function ServiceCatalog({
                           alt={service.title}
                           fill
                           unoptimized
-                          sizes="3.5rem"
-                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          className="object-cover transition duration-500 group-hover:scale-105"
                         />
                       </div>
                     ) : (
