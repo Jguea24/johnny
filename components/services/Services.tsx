@@ -42,9 +42,9 @@ export default function Services({
             {services.data.map((service) => (
               <article
                 key={service.id}
-                className="surface-card group flex h-full flex-col p-6 transition duration-300 hover:-translate-y-1 hover:border-cyan-300/35 hover:bg-cyan-300/[0.04] motion-reduce:transform-none motion-reduce:transition-none"
+                className="surface-card group flex h-full flex-col overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-cyan-300/35 hover:bg-cyan-300/[0.04] motion-reduce:transform-none motion-reduce:transition-none"
               >
-                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-cyan-500/10 text-3xl transition group-hover:bg-cyan-500/20">
+                <div className="relative flex aspect-[16/9] w-full items-center justify-center overflow-hidden bg-gradient-to-br from-cyan-500/20 via-slate-900 to-indigo-500/20 text-6xl text-cyan-200 transition group-hover:bg-cyan-500/20">
                   {service.image_url ? (
                     <div className="relative h-full w-full">
                       <Image
@@ -52,8 +52,8 @@ export default function Services({
                         alt={service.title}
                         fill
                         unoptimized
-                        sizes="3.5rem"
-                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                        className="object-cover transition duration-500 group-hover:scale-105"
                       />
                     </div>
                   ) : (
@@ -61,6 +61,7 @@ export default function Services({
                   )}
                 </div>
 
+                <div className="flex flex-1 flex-col p-6">
                 {service.category_id && categoryNames.has(service.category_id) ? (
                   <p className="mt-5 text-sm font-medium text-cyan-400">
                     {categoryNames.get(service.category_id)}
@@ -92,11 +93,12 @@ export default function Services({
                     Ver detalles <span aria-hidden="true">→</span>
                   </Link>
                   <Link
-                    href="/#contacto"
+                    href={`/servicios/${encodeURIComponent(service.slug)}#solicitar`}
                     className="inline-flex min-h-11 items-center text-cyan-400 transition hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
                   >
                     Solicitar servicio
                   </Link>
+                </div>
                 </div>
               </article>
             ))}

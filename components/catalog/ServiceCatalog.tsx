@@ -50,7 +50,7 @@ export default function ServiceCatalog({
                   key={service.id}
                   className="surface-card group flex flex-col overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-cyan-300/35 motion-reduce:transform-none motion-reduce:transition-none"
                 >
-                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-cyan-500/20 via-slate-900 to-indigo-500/20 text-cyan-200">
+                  <div className="relative flex aspect-[16/9] w-full items-center justify-center overflow-hidden bg-gradient-to-br from-cyan-500/20 via-slate-900 to-indigo-500/20 text-6xl text-cyan-200">
                     {service.image_url ? (
                       <div className="relative h-full w-full">
                         <Image
@@ -66,6 +66,7 @@ export default function ServiceCatalog({
                       <span aria-hidden="true">{service.icon || "◇"}</span>
                     )}
                   </div>
+                  <div className="flex flex-1 flex-col p-6">
                   {service.category_id && categoryNames.has(service.category_id) ? (
                     <p className="mt-5 text-sm font-medium text-cyan-300">
                       {categoryNames.get(service.category_id)}
@@ -92,6 +93,13 @@ export default function ServiceCatalog({
                   >
                     Ver detalles <span aria-hidden="true">→</span>
                   </Link>
+                  <Link
+                    href={`/servicios/${encodeURIComponent(service.slug)}#solicitar`}
+                    className="mt-2 inline-flex min-h-11 items-center font-semibold text-cyan-200 outline-none hover:text-white focus-visible:ring-2 focus-visible:ring-cyan-300"
+                  >
+                    Solicitar servicio
+                  </Link>
+                  </div>
                 </article>
               ))}
             </div>
