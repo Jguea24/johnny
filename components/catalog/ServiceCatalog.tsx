@@ -100,14 +100,6 @@ export default function ServiceCatalog({
                   >
                     Solicitar servicio
                   </Link>
-                  {service.service_kind === "DIGITAL" && service.price !== null && service.price > 0 ? (
-                    <Link
-                      href={`/servicios/${encodeURIComponent(service.slug)}#datafast`}
-                      className="mt-2 inline-flex min-h-12 items-center justify-center rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950 outline-none transition hover:bg-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-200"
-                    >
-                      Comprar con tarjeta
-                    </Link>
-                  ) : null}
                   <WhatsAppLink
                     className="mt-2 inline-flex min-h-11 items-center gap-2 font-semibold text-emerald-300 outline-none hover:text-emerald-200 focus-visible:ring-2 focus-visible:ring-emerald-300"
                     message={`Hola Johnny, quisiera consultar sobre el servicio: ${service.title}.`}

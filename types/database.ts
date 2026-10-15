@@ -9,6 +9,10 @@ export type Json =
 export type UserRole = "USER" | "ADMIN";
 export type CategoryType = "SERVICE" | "PROJECT";
 export type ServiceKind = "TECHNOLOGICAL" | "DIGITAL";
+export type DigitalDurationUnit = "DAY" | "MONTH" | "YEAR" | "PERMANENT";
+export type DigitalOfferSource = "SELF_PROVIDED" | "THIRD_PARTY_AUTHORIZED";
+export type DigitalPaymentStatus = "PENDING" | "VERIFIED" | "REJECTED" | "CANCELLED";
+export type DigitalDeliveryStatus = "PENDING" | "DELIVERED" | "CANCELLED";
 export type ServiceStatus = "DRAFT" | "ACTIVE" | "INACTIVE";
 export type ProjectStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type ServiceRequestStatus =
@@ -91,6 +95,22 @@ export type Database = {
           tax_base0: number;
           tax_baseimp: number;
           tax_iva: number;
+          brand: string;
+          family_name: string;
+          plan_name: string;
+          offer_source: DigitalOfferSource;
+          duration_value: number | null;
+          duration_unit: DigitalDurationUnit;
+          previous_price: number | null;
+          included_features: string[];
+          distribution_method: string;
+          distribution_authorized: boolean;
+          renewal_policy: string;
+          license_type: string;
+          availability_status: string;
+          stock_mode: string;
+          stock_quantity: number | null;
+          conditions: string;
           status: ServiceStatus;
           sort_order: number;
         },
@@ -108,6 +128,22 @@ export type Database = {
           tax_base0?: number;
           tax_baseimp?: number;
           tax_iva?: number;
+          brand?: string;
+          family_name?: string;
+          plan_name?: string;
+          offer_source?: DigitalOfferSource;
+          duration_value?: number | null;
+          duration_unit?: DigitalDurationUnit;
+          previous_price?: number | null;
+          included_features?: string[];
+          distribution_method?: string;
+          distribution_authorized?: boolean;
+          renewal_policy?: string;
+          license_type?: string;
+          availability_status?: string;
+          stock_mode?: string;
+          stock_quantity?: number | null;
+          conditions?: string;
           status?: ServiceStatus;
           sort_order?: number;
           created_at?: string;
@@ -229,6 +265,68 @@ export type Database = {
           datafast_result_code?: string | null;
           datafast_payment_brand?: string | null;
           created_at?: string;
+          updated_at?: string;
+        }
+      >;
+      digital_orders: Table<
+        Timestamped & {
+          id: string;
+          service_id: string;
+          service_title: string;
+          brand: string;
+          family_name: string;
+          plan_name: string;
+          duration_value: number | null;
+          duration_unit: DigitalDurationUnit;
+          amount: number;
+          customer_name: string;
+          customer_email: string;
+          customer_phone: string;
+          payment_method: "WHATSAPP";
+          payment_status: DigitalPaymentStatus;
+          payment_verified_at: string | null;
+          delivery_status: DigitalDeliveryStatus;
+          delivered_at: string | null;
+          expires_at: string | null;
+          delivery_notes: string;
+          stock_reserved: boolean;
+        },
+        {
+          id?: string;
+          service_id: string;
+          service_title: string;
+          brand: string;
+          family_name: string;
+          plan_name: string;
+          duration_value?: number | null;
+          duration_unit: DigitalDurationUnit;
+          amount: number;
+          customer_name: string;
+          customer_email: string;
+          customer_phone: string;
+          payment_method?: "WHATSAPP";
+          payment_status?: DigitalPaymentStatus;
+          payment_verified_at?: string | null;
+          delivery_status?: DigitalDeliveryStatus;
+          delivered_at?: string | null;
+          expires_at?: string | null;
+          delivery_notes?: string;
+          stock_reserved?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        }
+      >;
+      digital_service_admin_notes: Table<
+        {
+          service_id: string;
+          authorization_reference: string;
+          activation_instructions: string;
+          updated_at: string;
+        },
+        {
+          service_id: string;
+          authorization_reference?: string;
+          activation_instructions?: string;
           updated_at?: string;
         }
       >;
@@ -373,6 +471,26 @@ export type Database = {
       reorder_hero_slide: {
         Args: { p_slide_id: string; p_direction: string };
         Returns: boolean;
+      };
+      create_digital_order: {
+        Args: {
+          p_service_id: string;
+          p_customer_name: string;
+          p_customer_email: string;
+          p_customer_phone: string;
+        };
+        Returns: string;
+      };
+      admin_update_digital_order: {
+        Args: {
+          p_order_id: string;
+          p_payment_status: DigitalPaymentStatus;
+          p_delivery_status: DigitalDeliveryStatus;
+          p_delivered_at: string | null;
+          p_expires_at: string | null;
+          p_delivery_notes: string;
+        };
+        Returns: undefined;
       };
     };
     Enums: {

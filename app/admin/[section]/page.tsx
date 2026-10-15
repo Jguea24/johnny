@@ -63,7 +63,29 @@ type ServiceAdminRow = Pick<
   | "price"
   | "status"
   | "sort_order"
-> & Partial<Pick<Database["public"]["Tables"]["services"]["Row"], "service_kind" | "tax_base0" | "tax_baseimp" | "tax_iva">>;
+> & Partial<Pick<
+  Database["public"]["Tables"]["services"]["Row"],
+  | "service_kind"
+  | "offer_source"
+  | "brand"
+  | "family_name"
+  | "plan_name"
+  | "duration_value"
+  | "duration_unit"
+  | "previous_price"
+  | "tax_base0"
+  | "tax_baseimp"
+  | "tax_iva"
+  | "included_features"
+  | "distribution_method"
+  | "distribution_authorized"
+  | "renewal_policy"
+  | "license_type"
+  | "availability_status"
+  | "stock_mode"
+  | "stock_quantity"
+  | "conditions"
+>>;
 
 function text(value: string | number | boolean | null | undefined): string {
   if (value === null || value === undefined) return "";
@@ -111,7 +133,7 @@ async function loadSection(section: Section): Promise<{
     const servicesQuery = serviceKind === "DIGITAL"
       ? supabase
           .from("services")
-          .select("id,title,slug,short_description,description,category_id,icon,image_url,price,status,sort_order,service_kind,tax_base0,tax_baseimp,tax_iva")
+          .select("id,title,slug,short_description,description,category_id,icon,image_url,price,status,sort_order,service_kind,brand,family_name,plan_name,offer_source,duration_value,duration_unit,previous_price,tax_base0,tax_baseimp,tax_iva,included_features,distribution_method,distribution_authorized,renewal_policy,license_type,availability_status,stock_mode,stock_quantity,conditions")
           .eq("service_kind", serviceKind)
           .order("sort_order", { ascending: true })
           .limit(200)
@@ -127,9 +149,9 @@ async function loadSection(section: Section): Promise<{
     ]);
     let serviceRows: ServiceAdminRow[] = servicesResult.data ?? [];
     if (servicesResult.error) {
-      const errorText = `${servicesResult.error.message ?? ""} ${servicesResult.error.details ?? ""}`.toLowerCase();
-      if (serviceKind === "DIGITAL" && (errorText.includes("tax_base0") || errorText.includes("tax_baseimp") || errorText.includes("tax_iva"))) {
-        throw new Error("ADMIN_SCHEMA:datafast_tax_fields_missing");
+      const digitalFieldsError = `${servicesResult.error.message ?? ""} ${servicesResult.error.details ?? ""}`.toLowerCase();
+      if (serviceKind === "DIGITAL" && ["brand", "family_name", "plan_name", "offer_source", "duration_unit", "distribution_authorized"].some((column) => digitalFieldsError.includes(column))) {
+        throw new Error("ADMIN_SCHEMA:digital_catalog_missing");
       }
       if (!isMissingServiceKindColumn(servicesResult.error)) {
         throw new Error(`ADMIN_QUERY:services:${servicesResult.error.code}`);
@@ -152,6 +174,25 @@ async function loadSection(section: Section): Promise<{
       value: item.id,
       label: item.name,
     }));
+    const categoryNames = new Map(
+      categories.map((category) => [category.value, category.label]),
+    );
+    const notesByService = new Map<string, { authorization_reference: string; activation_instructions: string }>();
+    if (serviceKind === "DIGITAL" && serviceRows.length > 0) {
+      const notesResult = await supabase
+        .from("digital_service_admin_notes")
+        .select("service_id,authorization_reference,activation_instructions")
+        .in("service_id", serviceRows.map((service) => service.id));
+      if (notesResult.error) {
+        throw new Error(`ADMIN_QUERY:digital_service_notes:${notesResult.error.code}`);
+      }
+      for (const item of notesResult.data ?? []) {
+        notesByService.set(item.service_id, {
+          authorization_reference: item.authorization_reference,
+          activation_instructions: item.activation_instructions,
+        });
+      }
+    }
     records = serviceRows.map((row) =>
       createRecord(
         row.id,
@@ -163,12 +204,31 @@ async function loadSection(section: Section): Promise<{
           short_description: row.short_description,
           description: row.description,
           category_id: row.category_id,
+          category_name: row.category_id ? categoryNames.get(row.category_id) ?? "" : "",
           icon: row.icon,
           image_url: row.image_url,
           price: row.price === null ? "" : text(row.price),
-          tax_base0: text(row.tax_base0 ?? 0),
-          tax_baseimp: text(row.tax_baseimp ?? 0),
-          tax_iva: text(row.tax_iva ?? 0),
+          brand: row.brand ?? "",
+          family_name: row.family_name ?? "",
+          plan_name: row.plan_name ?? "",
+          offer_source: row.offer_source ?? "THIRD_PARTY_AUTHORIZED",
+          duration_value: row.duration_value === null || row.duration_value === undefined ? "" : text(row.duration_value),
+          duration_unit: row.duration_unit ?? "PERMANENT",
+          previous_price: row.previous_price === null || row.previous_price === undefined ? "" : text(row.previous_price),
+          tax_base0: text(row.tax_base0),
+          tax_baseimp: text(row.tax_baseimp),
+          tax_iva: text(row.tax_iva),
+          included_features: (row.included_features ?? []).join("\n"),
+          distribution_method: row.distribution_method ?? "WHATSAPP_MANUAL",
+          distribution_authorized: row.distribution_authorized ?? false,
+          renewal_policy: row.renewal_policy ?? "CONFIRM_MANUALLY",
+          license_type: row.license_type ?? "OTHER",
+          availability_status: row.availability_status ?? "UNAVAILABLE",
+          stock_mode: row.stock_mode ?? "UNLIMITED",
+          stock_quantity: row.stock_quantity === null || row.stock_quantity === undefined ? "" : text(row.stock_quantity),
+          conditions: row.conditions ?? "",
+          authorization_reference: notesByService.get(row.id)?.authorization_reference ?? "",
+          activation_instructions: notesByService.get(row.id)?.activation_instructions ?? "",
           status: row.status,
           sort_order: text(row.sort_order),
         },
@@ -315,7 +375,7 @@ async function AdminSectionContent({ params }: PageProps) {
     const errorMessage = error instanceof Error ? error.message : "UnknownError";
     const categoryQueryError = errorMessage.match(/^ADMIN_QUERY:project_categories:([A-Z0-9]+)$/);
     const digitalSchemaPending = errorMessage === "ADMIN_SCHEMA:service_kind_missing";
-    const datafastSchemaPending = errorMessage === "ADMIN_SCHEMA:datafast_tax_fields_missing";
+    const digitalCatalogSchemaPending = errorMessage === "ADMIN_SCHEMA:digital_catalog_missing";
     console.error(
       categoryQueryError
         ? `Unable to load project categories. Supabase code: ${categoryQueryError[1]}`
@@ -335,8 +395,8 @@ async function AdminSectionContent({ params }: PageProps) {
         >
           {digitalSchemaPending
             ? "La sección digital estará disponible cuando se aplique la migración de servicios digitales en Supabase."
-            : datafastSchemaPending
-              ? "Aplica la migración de Datafast en Supabase para gestionar servicios digitales con cobro."
+            : digitalCatalogSchemaPending
+              ? "Aplica la migración local del catálogo de suscripciones digitales en Supabase para configurar planes, entrega autorizada y pedidos."
             : "No fue posible cargar esta sección. Comprueba la política RLS administrativa de su tabla y vuelve a intentarlo."}
         </p>
       </main>

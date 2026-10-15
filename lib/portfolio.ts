@@ -24,7 +24,26 @@ export type PublicService = Pick<
   | "price"
   | "service_kind"
   | "category_id"
->;
+> & Partial<Pick<
+  ServiceRow,
+  | "brand"
+  | "family_name"
+  | "plan_name"
+  | "offer_source"
+  | "duration_value"
+  | "duration_unit"
+  | "previous_price"
+  | "included_features"
+  | "distribution_method"
+  | "distribution_authorized"
+  | "renewal_policy"
+  | "license_type"
+  | "availability_status"
+  | "stock_mode"
+  | "stock_quantity"
+  | "conditions"
+>>;
+
 
 type PublicProjectFields = Pick<
   ProjectRow,
@@ -151,14 +170,20 @@ export async function getPublicServices(
   if (!getSupabaseConfig()) return emptyListing("unconfigured");
   await io();
   const supabase = await createClient();
-  const result = await supabase
-    .from("services")
-    .select(
-      "id,title,slug,short_description,description,icon,image_url,price,category_id,service_kind",
-    )
-    .eq("service_kind", serviceKind)
-    .eq("status", "ACTIVE")
-    .order("sort_order", { ascending: true });
+  const result = serviceKind === "DIGITAL"
+    ? await supabase
+        .from("services")
+        .select("id,title,slug,short_description,description,icon,image_url,price,category_id,service_kind,brand,family_name,plan_name,offer_source,duration_value,duration_unit,previous_price,included_features,distribution_method,distribution_authorized,renewal_policy,license_type,availability_status,stock_mode,stock_quantity,conditions")
+        .eq("service_kind", "DIGITAL")
+        .eq("status", "ACTIVE")
+        .or("offer_source.eq.SELF_PROVIDED,and(offer_source.eq.THIRD_PARTY_AUTHORIZED,distribution_authorized.eq.true)")
+        .order("sort_order", { ascending: true })
+    : await supabase
+        .from("services")
+        .select("id,title,slug,short_description,description,icon,image_url,price,category_id,service_kind")
+        .eq("service_kind", "TECHNOLOGICAL")
+        .eq("status", "ACTIVE")
+        .order("sort_order", { ascending: true });
 
   if (result.error) {
     if (isMissingServiceKindColumn(result.error)) {
@@ -183,6 +208,17 @@ export async function getPublicServices(
         message:
           "El catálogo digital estará disponible cuando se actualice el esquema de la base de datos.",
       };
+    }
+    if (serviceKind === "DIGITAL") {
+      const message = result.error.message?.toLowerCase() ?? "";
+      const requiredColumns = ["brand", "family_name", "plan_name", "offer_source", "duration_unit", "distribution_authorized"];
+      if (requiredColumns.some((column) => message.includes(column))) {
+        return {
+          status: "error",
+          data: [],
+          message: "El catálogo de planes digitales necesita la migración local pendiente de aplicar en Supabase.",
+        };
+      }
     }
     logReadError("services", result.error);
     return emptyListing("error");
@@ -216,9 +252,30 @@ export async function getPublicService(
     }
     return legacyResult.data
       ? { status: "ready", data: { ...legacyResult.data, service_kind: "TECHNOLOGICAL" } }
-      : emptyRecord("not-found");
+      : emptyRecord<PublicService>("not-found");
   }
-  return loadRecord(Promise.resolve(result), "service detail");
+  if (result.error) {
+    logReadError("service detail", result.error);
+    return emptyRecord<PublicService>("error");
+  }
+  if (!result.data) return emptyRecord<PublicService>("not-found");
+  if (result.data.service_kind !== "DIGITAL") {
+    return { status: "ready", data: result.data };
+  }
+  const digitalResult = await supabase
+    .from("services")
+    .select("id,title,slug,short_description,description,icon,image_url,price,category_id,service_kind,brand,family_name,plan_name,offer_source,duration_value,duration_unit,previous_price,included_features,distribution_method,distribution_authorized,renewal_policy,license_type,availability_status,stock_mode,stock_quantity,conditions")
+    .eq("status", "ACTIVE")
+    .or("offer_source.eq.SELF_PROVIDED,and(offer_source.eq.THIRD_PARTY_AUTHORIZED,distribution_authorized.eq.true)")
+    .eq("id", result.data.id)
+    .maybeSingle();
+  if (digitalResult.error) {
+    logReadError("digital service details", digitalResult.error);
+    return emptyRecord<PublicService>("error");
+  }
+  return digitalResult.data
+    ? { status: "ready", data: digitalResult.data }
+    : emptyRecord<PublicService>("not-found");
 }
 
 export async function getPublicProjects(): Promise<

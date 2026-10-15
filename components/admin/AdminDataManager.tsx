@@ -9,6 +9,7 @@ import {
   type AdminActionState,
 } from "@/lib/admin/actions";
 import { parseYouTubeLink, safeHttpUrl } from "@/lib/portfolio-links";
+import DigitalServicesManager from "@/components/admin/DigitalServicesManager";
 
 type Section =
   | "usuarios"
@@ -71,6 +72,49 @@ const commonStatusOptions: Record<string, Option[]> = {
   ],
 };
 
+const digitalProductOptions: Record<string, Option[]> = {
+  offer_source: [
+    { value: "", label: "Selecciona el tipo de oferta" },
+    { value: "SELF_PROVIDED", label: "Servicio propio: lo presto yo" },
+    { value: "THIRD_PARTY_AUTHORIZED", label: "Producto de terceros con distribución autorizada" },
+  ],
+  duration_unit: [
+    { value: "DAY", label: "Días" },
+    { value: "MONTH", label: "Meses" },
+    { value: "YEAR", label: "Años" },
+    { value: "PERMANENT", label: "Acceso permanente" },
+  ],
+  distribution_method: [
+    { value: "WHATSAPP_MANUAL", label: "Entrega manual coordinada por WhatsApp" },
+    { value: "OFFICIAL_REDEMPTION_CODE", label: "Código oficial de canje" },
+    { value: "OFFICIAL_INVITATION", label: "Invitación oficial del proveedor" },
+    { value: "AUTHORIZED_DOWNLOAD", label: "Descarga autorizada" },
+    { value: "OTHER_AUTHORIZED", label: "Otra modalidad autorizada" },
+  ],
+  renewal_policy: [
+    { value: "RENEWABLE_MANUALLY", label: "Sí, se renueva manualmente" },
+    { value: "NOT_RENEWABLE", label: "No renovable" },
+    { value: "CONFIRM_MANUALLY", label: "Confirmar con el administrador" },
+  ],
+  license_type: [
+    { value: "SUBSCRIPTION", label: "Suscripción" },
+    { value: "PERPETUAL_LICENSE", label: "Licencia permanente" },
+    { value: "COURSE_ACCESS", label: "Acceso a curso" },
+    { value: "DOWNLOAD", label: "Producto descargable" },
+    { value: "OTHER", label: "Otro tipo de acceso" },
+  ],
+  availability_status: [
+    { value: "AVAILABLE", label: "Disponible" },
+    { value: "ON_REQUEST", label: "Consultar disponibilidad" },
+    { value: "OUT_OF_STOCK", label: "Agotado" },
+    { value: "UNAVAILABLE", label: "No disponible" },
+  ],
+  stock_mode: [
+    { value: "UNLIMITED", label: "Sin límite de unidades" },
+    { value: "LIMITED", label: "Stock limitado" },
+  ],
+};
+
 const settingKeys: Option[] = [
   { value: "site.title", label: "Título del sitio" },
   { value: "site.description", label: "Descripción del sitio" },
@@ -118,10 +162,25 @@ const fieldGroups: Partial<Record<Section, Record<string, string>>> = {
     category_id: "Clasificación y presentación",
     icon: "Clasificación y presentación",
     image_url: "Clasificación y presentación",
-    price: "Publicación y precio",
-    tax_base0: "Impuestos para Datafast",
-    tax_baseimp: "Impuestos para Datafast",
-    tax_iva: "Impuestos para Datafast",
+    brand: "Marca y plan",
+    offer_source: "Modalidad de oferta",
+    family_name: "Marca y plan",
+    plan_name: "Marca y plan",
+    duration_value: "Duración y precio",
+    duration_unit: "Duración y precio",
+    price: "Duración y precio",
+    previous_price: "Duración y precio",
+    included_features: "Qué incluye el plan",
+    distribution_method: "Entrega autorizada",
+    distribution_authorized: "Entrega autorizada",
+    authorization_reference: "Entrega autorizada",
+    renewal_policy: "Acceso y renovación",
+    license_type: "Acceso y renovación",
+    availability_status: "Disponibilidad y stock",
+    stock_mode: "Disponibilidad y stock",
+    stock_quantity: "Disponibilidad y stock",
+    conditions: "Condiciones e instrucciones",
+    activation_instructions: "Condiciones e instrucciones",
     status: "Publicación y precio",
     sort_order: "Publicación y precio",
   },
@@ -198,7 +257,6 @@ function fieldsFor(
         field("avatar_url", "URL de imagen de perfil", "url", { maxLength: 2048 }),
       ];
     case "servicios":
-    case "servicios-digitales":
       return [
         field("title", "Título", "text", { required: true, maxLength: 180 }),
         field("slug", "Slug", "text", { required: true, maxLength: 120 }),
@@ -210,15 +268,38 @@ function fieldsFor(
         field("icon", "Icono", "text", { maxLength: 80 }),
         field("image_url", "URL de imagen", "url", { maxLength: 2048 }),
         field("price", "Precio total (opcional)", "number", { min: "0", step: "0.01" }),
-        ...(section === "servicios-digitales"
-          ? [
-              field("tax_base0", "Base 0%", "number", { required: true, min: "0", step: "0.01", group: "Impuestos para Datafast" }),
-              field("tax_baseimp", "Base imponible", "number", { required: true, min: "0", step: "0.01", group: "Impuestos para Datafast" }),
-              field("tax_iva", "IVA incluido", "number", { required: true, min: "0", step: "0.01", group: "Impuestos para Datafast" }),
-            ]
-          : []),
         field("status", "Estado", "select", { required: true, options: commonStatusOptions.service }),
         field("sort_order", "Orden", "number", { required: true, step: "1" }),
+      ];
+    case "servicios-digitales":
+      return [
+        field("title", "Nombre comercial", "text", { required: true, maxLength: 180 }),
+        field("offer_source", "Tipo de oferta", "select", { required: true, options: digitalProductOptions.offer_source }),
+        field("slug", "Identificador URL", "text", { required: true, maxLength: 120 }),
+        field("short_description", "Resumen del producto", "textarea", { required: true, maxLength: 500 }),
+        field("description", "Descripción completa", "textarea", { required: true, maxLength: 12000 }),
+        field("category_id", "Categoría", "select", { options: [{ value: "", label: "Sin categoría" }, ...categoryOptions] }),
+        field("image_url", "Imagen del producto (URL)", "url", { maxLength: 2048 }),
+        field("brand", "Marca o proveedor", "text", { maxLength: 120 }),
+        field("family_name", "Familia de producto (para relacionar planes)", "text", { maxLength: 120 }),
+        field("plan_name", "Plan o edición", "text", { maxLength: 120 }),
+        field("duration_value", "Duración", "number", { min: "1", step: "1" }),
+        field("duration_unit", "Unidad de duración", "select", { options: digitalProductOptions.duration_unit }),
+        field("price", "Precio de venta (USD)", "number", { min: "0.01", step: "0.01" }),
+        field("previous_price", "Precio anterior (opcional; solo oferta real)", "number", { min: "0.01", step: "0.01" }),
+        field("included_features", "Características incluidas (una por línea)", "textarea", { maxLength: 4000 }),
+        field("distribution_method", "Modalidad de entrega", "select", { options: digitalProductOptions.distribution_method }),
+        field("distribution_authorized", "Confirmo que el proveedor autoriza esta modalidad de distribución", "checkbox"),
+        field("authorization_reference", "Referencia interna que respalda la autorización", "textarea", { maxLength: 1200 }),
+        field("renewal_policy", "Renovación", "select", { options: digitalProductOptions.renewal_policy }),
+        field("license_type", "Tipo de licencia o acceso", "select", { options: digitalProductOptions.license_type }),
+        field("availability_status", "Disponibilidad", "select", { options: digitalProductOptions.availability_status }),
+        field("stock_mode", "Control de stock", "select", { options: digitalProductOptions.stock_mode }),
+        field("stock_quantity", "Unidades disponibles", "number", { min: "0", step: "1" }),
+        field("conditions", "Condiciones y restricciones", "textarea", { maxLength: 4000 }),
+        field("activation_instructions", "Instrucciones internas de activación (sin claves ni contraseñas)", "textarea", { maxLength: 4000 }),
+        field("status", "Estado de publicación", "select", { required: true, options: commonStatusOptions.service }),
+        field("sort_order", "Orden en el catálogo", "number", { required: true, step: "1" }),
       ];
     case "proyectos":
       return [
@@ -288,7 +369,10 @@ function AdminForm({
   operation: "create" | "update" | "delete";
   title?: string;
 }) {
-  const [formValues, setFormValues] = useState(values ?? {});
+  const [formValues, setFormValues] = useState(values ?? (section === "servicios-digitales"
+    ? { status: "DRAFT", sort_order: "1", distribution_method: "WHATSAPP_MANUAL", renewal_policy: "CONFIRM_MANUALLY", license_type: "OTHER", availability_status: "ON_REQUEST", stock_mode: "UNLIMITED" }
+    : {}));
+  const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [imagePreviewFailed, setImagePreviewFailed] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
@@ -341,6 +425,8 @@ function AdminForm({
     },
     {},
   );
+  const showAdvanced = advancedExpanded || (section === "servicios-digitales" && Boolean(state.error?.toLowerCase().includes("autorizaci")));
+  const selfProvided = section === "servicios-digitales" && formValues.offer_source === "SELF_PROVIDED";
   if (operation === "delete") {
     return (
       <form
@@ -383,10 +469,29 @@ function AdminForm({
       <input type="hidden" name="section" value={section} />
       <input type="hidden" name="operation" value={operation} />
       {recordId ? <input type="hidden" name="record_id" value={recordId} /> : null}
-      {fields.map((item, index) => {
+      {section === "servicios-digitales" ? (
+        <input type="hidden" name="slug" value={typeof formValues.slug === "string" && formValues.slug ? formValues.slug : (typeof formValues.title === "string" ? formValues.title : "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 120)} />
+      ) : null}
+      {section === "servicios-digitales" ? (
+        <div className="rounded-lg border border-cyan-300/15 bg-cyan-300/[0.04] p-3 text-sm text-slate-300 md:col-span-2">
+          Empieza con nombre, plan, duración y precio. Los detalles adicionales son opcionales o se completan en <button type="button" onClick={() => setAdvancedExpanded((visible) => !visible)} className="font-semibold text-cyan-200 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">{showAdvanced ? "menos opciones" : "más opciones"}</button>.
+        </div>
+      ) : null}
+      {section === "servicios-digitales" && (!showAdvanced || selfProvided) ? fields
+        .filter((item) => (!showAdvanced || (selfProvided && ["distribution_authorized", "authorization_reference"].includes(item.name))) && !["title", "offer_source", "brand", "family_name", "plan_name", "duration_value", "duration_unit", "price", "category_id", "short_description", "status", "slug"].includes(item.name))
+        .map((item) => (
+          <input
+            key={`hidden-${item.name}`}
+            type="hidden"
+            name={item.name}
+            value={item.kind === "checkbox" ? (formValues[item.name] === true ? "on" : "") : String(formValues[item.name] ?? "")}
+          />
+        )) : null}
+      {fields.filter((item) => section !== "servicios-digitales" || ((["title", "offer_source", "brand", "family_name", "plan_name", "duration_value", "duration_unit", "price", "category_id", "short_description", "status"].includes(item.name) || showAdvanced) && !(selfProvided && ["distribution_authorized", "authorization_reference"].includes(item.name)))).map((item, index) => {
         if (section === "proyectos" && operation === "create" && item.name === "status") {
           return null;
         }
+        if (section === "servicios-digitales" && item.name === "slug") return null;
         const value = formValues[item.name];
         const id = `${operation}-${recordId ?? "new"}-${item.name}`;
         const common = {
@@ -430,7 +535,12 @@ function AdminForm({
               <select
                 {...common}
                 value={typeof value === "string" ? value : ""}
-                onChange={(event) => setFormValues((current) => ({ ...current, [item.name]: event.target.value }))}
+                onChange={(event) => setFormValues((current) => ({
+                  ...current,
+                  [item.name]: event.target.value,
+                  ...(item.name === "duration_unit" && event.target.value === "PERMANENT" ? { duration_value: "" } : {}),
+                  ...(item.name === "stock_mode" && event.target.value === "UNLIMITED" ? { stock_quantity: "" } : {}),
+                }))}
               >
                 {!item.required && !item.options?.some((option) => option.value === "") ? (
                   <option value="">—</option>
@@ -485,7 +595,14 @@ function AdminForm({
                 step={item.step}
                 value={typeof value === "string" ? value : ""}
                 onChange={(event) => {
-                  setFormValues((current) => ({ ...current, [item.name]: event.target.value }));
+                  const nextValue = event.target.value;
+                  setFormValues((current) => ({
+                    ...current,
+                    [item.name]: nextValue,
+                    ...(section === "servicios-digitales" && item.name === "title" && operation === "create"
+                      ? { slug: nextValue.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 120) }
+                      : {}),
+                  }));
                   if (item.name === "main_image") setImagePreviewFailed(false);
                 }}
               />
@@ -577,7 +694,7 @@ function AdminForm({
   );
 }
 
-export default function AdminDataManager({
+function AdminDataManagerGeneric({
   section,
   records,
   categories,
@@ -589,6 +706,17 @@ export default function AdminDataManager({
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const fields = fieldsFor(section, categories);
+  if (section === "servicios-digitales") {
+    const digitalFieldOrder = [
+      "title", "offer_source", "brand", "family_name", "plan_name", "duration_value", "duration_unit",
+      "price", "category_id", "short_description", "status", "slug", "description",
+      "image_url", "previous_price", "included_features", "distribution_method",
+      "distribution_authorized", "authorization_reference", "renewal_policy", "license_type",
+      "availability_status", "stock_mode", "stock_quantity", "conditions",
+      "activation_instructions", "sort_order",
+    ];
+    fields.sort((a, b) => digitalFieldOrder.indexOf(a.name) - digitalFieldOrder.indexOf(b.name));
+  }
   if (section === "proyectos") {
     const projectFieldOrder = [
       "title", "slug", "short_description", "description", "category_id",
@@ -621,6 +749,21 @@ export default function AdminDataManager({
           <p className="mt-1 text-sm text-slate-400">
             Completa la información por secciones. Los campos marcados con * son obligatorios.
           </p>
+          {section === "servicios-digitales" ? (
+            <div className="mt-4 rounded-xl border border-cyan-300/15 bg-cyan-300/[0.04] p-4 text-sm leading-6 text-slate-300">
+              <p>Configura cada plan independiente con marca, edición, duración, precio, características, disponibilidad y entrega. Para publicarlo debes confirmar la autorización del proveedor y guardar una referencia verificable. Las instrucciones de activación y la referencia quedan privadas para el administrador; nunca guardes claves ni contraseñas aquí. Pago y entrega se coordinan manualmente por WhatsApp.</p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <Link href="/admin/categorias" className="inline-flex min-h-10 items-center rounded-lg border border-white/15 px-3 font-semibold text-cyan-200 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Administrar categorías</Link>
+                <Link href="/servicios-digitales" target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center rounded-lg border border-white/15 px-3 font-semibold text-cyan-200 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Vista previa de la tienda</Link>
+              </div>
+            </div>
+          ) : null}
+          {section === "servicios-digitales" && categories.length === 0 ? (
+            <p className="mt-3 rounded-lg border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-sm text-amber-100">
+              Aún no hay categorías de servicios. Crea las familias del catálogo desde{" "}
+              <Link href="/admin/categorias" className="font-semibold underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Administrar categorías</Link>.
+            </p>
+          ) : null}
           {section === "proyectos" && categories.length === 0 ? (
             <p className="mt-3 rounded-lg border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-sm text-amber-100">
               No hay categorías de proyectos disponibles. Puedes gestionarlas en{" "}
@@ -763,4 +906,20 @@ export default function AdminDataManager({
       </section>
     </div>
   );
+}
+
+export default function AdminDataManager(props: {
+  section: Section;
+  records: AdminRecord[];
+  categories: Option[];
+}) {
+  if (props.section === "servicios-digitales") {
+    return (
+      <DigitalServicesManager
+        records={props.records}
+        categories={props.categories}
+      />
+    );
+  }
+  return <AdminDataManagerGeneric {...props} />;
 }

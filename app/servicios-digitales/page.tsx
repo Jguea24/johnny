@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import ServiceCatalog from "@/components/catalog/ServiceCatalog";
+import DigitalServiceCatalog from "@/components/catalog/DigitalServiceCatalog";
 import PublicPageFrame from "@/components/layout/PublicPageFrame";
 import { getPublicCategories, getPublicServices } from "@/lib/portfolio";
 import { getPublicSiteSettings } from "@/lib/site-settings";
@@ -30,19 +30,19 @@ async function DigitalServicesPageContent() {
               ← Servicios
             </Link>
             <p className="mt-10 text-sm font-semibold uppercase tracking-[0.25em] text-cyan-400">
-              Catálogo digital
+              Tienda digital
             </p>
             <h1 className="mt-4 max-w-3xl text-[clamp(2rem,5vw,3rem)] font-bold">
-              Servicios digitales
+              Encuentra tu próximo servicio digital
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-              Explora las soluciones digitales disponibles y consulta la que se
-              ajuste a tus necesidades.
+              Explora el catálogo por categorías, revisa cada producto y
+              contáctanos por WhatsApp para confirmar disponibilidad y forma de pago.
             </p>
           </div>
         </section>
         <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
-          <ServiceCatalog services={services} categories={categories} />
+          <DigitalServiceCatalog services={services} categories={categories} />
         </section>
       </main>
     </PublicPageFrame>
