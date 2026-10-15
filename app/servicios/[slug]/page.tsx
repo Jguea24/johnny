@@ -6,6 +6,8 @@ import { notFound } from "next/navigation";
 import { getPublicCategories, getPublicService } from "@/lib/portfolio";
 import { isValidSlug } from "@/lib/slug";
 import ServiceRequestForm from "@/components/requests/ServiceRequestForm";
+import DatafastCheckout from "@/components/payments/DatafastCheckout";
+import { WhatsAppLink } from "@/components/contact/WhatsAppButton";
 import PublicPageFrame from "@/components/layout/PublicPageFrame";
 import { getPublicSiteSettings } from "@/lib/site-settings";
 
@@ -92,7 +94,7 @@ async function ServiceDetailContent({ params }: PageProps) {
           </p>
           {service.price !== null ? (
             <p className="mt-5 font-semibold text-white">
-              Desde{" "}
+              {service.service_kind === "DIGITAL" ? "Precio " : "Desde "}
               {service.price.toLocaleString("es", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
@@ -103,6 +105,13 @@ async function ServiceDetailContent({ params }: PageProps) {
         <div className="mt-10 whitespace-pre-line leading-8 text-slate-300">
           {service.description}
         </div>
+        {service.service_kind === "DIGITAL" && service.price !== null && service.price > 0 ? (
+          <DatafastCheckout
+            serviceId={service.id}
+            serviceTitle={service.title}
+            amount={service.price}
+          />
+        ) : null}
         <section
           id="solicitar"
           className="surface-card mt-12 border-cyan-300/20 p-4 sm:p-8"
@@ -111,6 +120,12 @@ async function ServiceDetailContent({ params }: PageProps) {
           <p className="mt-2 text-slate-300">
             Envía una solicitud desde tu cuenta y podrás consultar su estado.
           </p>
+          <WhatsAppLink
+            className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl bg-emerald-500 px-5 font-semibold text-slate-950 transition-colors hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+            message={`Hola Johnny, quisiera consultar sobre el servicio: ${service.title}.`}
+            pagePath={`/servicios/${encodeURIComponent(service.slug)}`}
+            label="Consultar por WhatsApp"
+          />
           <div className="mt-7">
             <ServiceRequestForm
               serviceId={service.id}

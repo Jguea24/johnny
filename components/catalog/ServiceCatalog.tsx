@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import CatalogFilters from "@/components/catalog/CatalogFilters";
+import { WhatsAppLink } from "@/components/contact/WhatsAppButton";
 import type { PublicCategory, PublicListing, PublicService } from "@/lib/portfolio";
 
 export default function ServiceCatalog({
@@ -80,7 +81,7 @@ export default function ServiceCatalog({
                   </p>
                   {service.price !== null ? (
                     <p className="mt-4 text-sm font-semibold text-slate-200">
-                      Desde{" "}
+                      {service.service_kind === "DIGITAL" ? "Precio " : "Desde "}
                       {service.price.toLocaleString("es", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
@@ -99,6 +100,20 @@ export default function ServiceCatalog({
                   >
                     Solicitar servicio
                   </Link>
+                  {service.service_kind === "DIGITAL" && service.price !== null && service.price > 0 ? (
+                    <Link
+                      href={`/servicios/${encodeURIComponent(service.slug)}#datafast`}
+                      className="mt-2 inline-flex min-h-12 items-center justify-center rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950 outline-none transition hover:bg-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-200"
+                    >
+                      Comprar con tarjeta
+                    </Link>
+                  ) : null}
+                  <WhatsAppLink
+                    className="mt-2 inline-flex min-h-11 items-center gap-2 font-semibold text-emerald-300 outline-none hover:text-emerald-200 focus-visible:ring-2 focus-visible:ring-emerald-300"
+                    message={`Hola Johnny, quisiera consultar sobre el servicio: ${service.title}.`}
+                    pagePath={`/servicios/${encodeURIComponent(service.slug)}`}
+                    label="Consultar por WhatsApp"
+                  />
                   </div>
                 </article>
               ))}
@@ -128,7 +143,7 @@ export default function ServiceCatalog({
           <p className="mt-2 text-slate-400">
             {services.status === "ready"
               ? "Los servicios estarán disponibles aquí cuando se publiquen."
-              : "Inténtalo de nuevo más tarde."}
+              : services.message ?? "Inténtalo de nuevo más tarde."}
           </p>
         </div>
       )}

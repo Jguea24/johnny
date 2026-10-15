@@ -112,6 +112,10 @@ function TeamMemberForm({
         <input type="hidden" name="member_id" value={member.id} />
       ) : null}
       <div className="grid min-w-0 content-start gap-4 sm:grid-cols-2">
+        <div className="border-b border-white/10 pb-2 sm:col-span-2">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-cyan-200">Datos básicos</h3>
+          <p className="mt-1 text-xs text-slate-500">Nombre, cargo y especialidad visibles en el sitio.</p>
+        </div>
         {founder ? (
           <>
             <div>
@@ -193,6 +197,9 @@ function TeamMemberForm({
         {founder ? (
           <input type="hidden" name="slug" value="johnny-grefa" />
         ) : null}
+        <div className="border-b border-white/10 pb-2 sm:col-span-2">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-cyan-200">Presentación</h3>
+        </div>
         <div className="sm:col-span-2">
           <label
             className={labelClass}
@@ -211,6 +218,10 @@ function TeamMemberForm({
           <p className="mt-1 text-xs text-slate-500">
             Máximo 2.000 caracteres. Se requiere una presentación real para publicar.
           </p>
+        </div>
+        <div className="border-b border-white/10 pb-2 sm:col-span-2">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-cyan-200">Enlaces profesionales</h3>
+          <p className="mt-1 text-xs text-slate-500">Añade solo enlaces públicos que quieras mostrar.</p>
         </div>
         <div>
           <label
@@ -245,6 +256,9 @@ function TeamMemberForm({
             placeholder="https://…"
             className={inputClass}
           />
+        </div>
+        <div className="border-b border-white/10 pb-2 sm:col-span-2">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-cyan-200">Fotografía y publicación</h3>
         </div>
         <div>
           <label
@@ -386,7 +400,8 @@ function TeamMemberForm({
           {founder ? " una presentación completa." : " especialidad."}
         </p>
       </aside>
-      <div className="space-y-3 xl:col-span-2">
+      <div className="space-y-3 border-t border-white/10 pt-4 xl:col-span-2">
+        <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-300">Acciones</h3>
         <ResultMessage state={state} />
         <button
           type="submit"

@@ -10,7 +10,8 @@ export default function Navbar({ siteTitle }: { siteTitle: string }) {
   const navigation = [
     { href: "/#inicio", label: "Inicio" },
     { href: "/#sobre-mi", label: "Sobre mí" },
-    { href: "/servicios", label: "Servicios" },
+    { href: "/#servicios", label: "Servicios" },
+    { href: "/servicios-digitales", label: "Servicios digitales" },
     { href: "/proyectos", label: "Proyectos" },
   ];
 
@@ -35,13 +36,6 @@ export default function Navbar({ siteTitle }: { siteTitle: string }) {
               {item.label}
             </Link>
           ))}
-          <Link
-            href="/login"
-            className="text-sm text-slate-300 transition hover:text-cyan-400"
-          >
-            Iniciar sesión
-          </Link>
-
           <Link
             href="/contacto"
             className="button-primary min-h-11 rounded-full px-5"
@@ -70,7 +64,6 @@ export default function Navbar({ siteTitle }: { siteTitle: string }) {
         >
           {[
             ...navigation,
-            { href: "/login", label: "Iniciar sesión" },
             { href: "/contacto", label: "Contacto" },
           ].map((item) => (
             <Link

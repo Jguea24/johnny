@@ -4,11 +4,13 @@ import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { validateMediaFile } from "@/lib/admin/media-validation";
 import { requireAdmin } from "@/lib/auth/identity";
+import { isMissingServiceKindColumn } from "@/lib/service-kind";
 import { publicSiteSettingKeys } from "@/lib/site-settings";
 import type {
   CategoryType,
   ContactMessageStatus,
   ProjectStatus,
+  ServiceKind,
   ServiceRequestStatus,
   ServiceStatus,
   TestimonialStatus,
@@ -73,6 +75,11 @@ function actionError(error: unknown, fallback: string): AdminActionState {
   return { error: fallback };
 }
 
+function isMissingDatafastTaxColumns(error: { message?: string; details?: string }) {
+  const text = `${error.message ?? ""} ${error.details ?? ""}`.toLowerCase();
+  return text.includes("tax_base0") || text.includes("tax_baseimp") || text.includes("tax_iva");
+}
+
 function optionalUrl(value: string, label: string) {
   if (!value) return { success: true as const, data: null };
   const parsed = z.string().url().max(2048).safeParse(value);
@@ -96,6 +103,13 @@ function parseNullablePrice(raw: string) {
     return { success: false as const, message: "El precio debe ser positivo con hasta dos decimales." };
   }
   return { success: true as const, data: Number(parsed.data) };
+}
+
+function parseRequiredMoney(raw: string, label: string) {
+  const parsed = z.string().regex(/^\d{1,10}(?:\.\d{1,2})?$/).safeParse(raw);
+  return parsed.success
+    ? { success: true as const, data: Number(parsed.data) }
+    : { success: false as const, message: `${label} debe ser un importe válido con hasta dos decimales.` };
 }
 
 function parseCategoryId(raw: string) {
@@ -147,6 +161,9 @@ async function revalidateAdminPaths(section: string) {
     revalidatePath("/servicios");
     revalidatePath("/", "page");
   }
+  if (section === "servicios-digitales") {
+    revalidatePath("/servicios-digitales");
+  }
   if (section === "proyectos") {
     revalidatePath("/proyectos");
     revalidatePath("/", "page");
@@ -163,14 +180,22 @@ export async function adminMutationAction(
   const { supabase } = await requireAdmin();
   let uploadedProjectImagePath: string | null = null;
   try {
-    if (section === "servicios") {
+    if (section === "servicios" || section === "servicios-digitales") {
+      const serviceKind: ServiceKind = section === "servicios-digitales" ? "DIGITAL" : "TECHNOLOGICAL";
       if (!["create", "update", "delete"].includes(operation)) {
         return { error: "Operación no permitida." };
       }
       if (operation === "delete") {
         const id = idSchema.safeParse(recordId);
         if (!id.success) return { error: "El servicio seleccionado no es válido." };
-        const { data, error } = await supabase.from("services").delete().eq("id", id.data).select("id").maybeSingle();
+        let deleteResult = await supabase.from("services").delete().eq("id", id.data).eq("service_kind", serviceKind).select("id").maybeSingle();
+        if (deleteResult.error && isMissingServiceKindColumn(deleteResult.error)) {
+          if (serviceKind === "DIGITAL") {
+            return { error: "La sección digital requiere aplicar su migración antes de modificar registros." };
+          }
+          deleteResult = await supabase.from("services").delete().eq("id", id.data).select("id").maybeSingle();
+        }
+        const { data, error } = deleteResult;
         if (error || !data) {
           console.error(`Admin service delete failed. Supabase code: ${error?.code ?? "NO_ROW"}`);
           return { error: "No se pudo eliminar el servicio. Verifica permisos y relaciones." };
@@ -185,9 +210,15 @@ export async function adminMutationAction(
         const status = z.enum(serviceStatuses).safeParse(value(formData, "status"));
         const sortOrder = z.coerce.number().int().min(-100000).max(100000).safeParse(value(formData, "sort_order"));
         const price = parseNullablePrice(value(formData, "price"));
+        const taxBase0 = serviceKind === "DIGITAL" ? parseRequiredMoney(value(formData, "tax_base0"), "La base 0%") : { success: true as const, data: 0 };
+        const taxBaseimp = serviceKind === "DIGITAL" ? parseRequiredMoney(value(formData, "tax_baseimp"), "La base imponible") : { success: true as const, data: 0 };
+        const taxIva = serviceKind === "DIGITAL" ? parseRequiredMoney(value(formData, "tax_iva"), "El IVA") : { success: true as const, data: 0 };
         const imageUrl = optionalUrl(value(formData, "image_url"), "La imagen");
-        if (!title.success || !slug.success || !shortDescription.success || !description.success || !icon.success || !categoryId.success || !status.success || !sortOrder.success || !price.success || !imageUrl.success) {
-          return { error: (!title.success && title.error.issues[0]?.message) || (!slug.success && slug.error.issues[0]?.message) || (!shortDescription.success && shortDescription.error.issues[0]?.message) || (!description.success && description.error.issues[0]?.message) || (!icon.success && icon.error.issues[0]?.message) || (!categoryId.success && categoryId.message) || (!status.success && "El estado de servicio no es válido.") || (!sortOrder.success && "El orden debe ser un número entero válido.") || (!price.success && price.message) || (!imageUrl.success && imageUrl.message) || "Revisa los datos del servicio." };
+        if (!title.success || !slug.success || !shortDescription.success || !description.success || !icon.success || !categoryId.success || !status.success || !sortOrder.success || !price.success || !imageUrl.success || !taxBase0.success || !taxBaseimp.success || !taxIva.success) {
+          return { error: (!title.success && title.error.issues[0]?.message) || (!slug.success && slug.error.issues[0]?.message) || (!shortDescription.success && shortDescription.error.issues[0]?.message) || (!description.success && description.error.issues[0]?.message) || (!icon.success && icon.error.issues[0]?.message) || (!categoryId.success && categoryId.message) || (!status.success && "El estado de servicio no es válido.") || (!sortOrder.success && "El orden debe ser un número entero válido.") || (!price.success && price.message) || (!imageUrl.success && imageUrl.message) || (!taxBase0.success && taxBase0.message) || (!taxBaseimp.success && taxBaseimp.message) || (!taxIva.success && taxIva.message) || "Revisa los datos del servicio." };
+        }
+        if (serviceKind === "DIGITAL" && ((price.data !== null && Math.round(price.data * 100) !== Math.round((taxBase0.data + taxBaseimp.data + taxIva.data) * 100)) || (price.data === null && taxBase0.data + taxBaseimp.data + taxIva.data !== 0))) {
+          return { error: "El precio total debe coincidir con la suma de Base 0%, Base imponible e IVA." };
         }
         if (categoryId.data) {
           const { data: category, error } = await supabase
@@ -201,6 +232,7 @@ export async function adminMutationAction(
           }
         }
         const input = {
+          service_kind: serviceKind,
           title: title.data,
           slug: slug.data,
           short_description: shortDescription.data,
@@ -209,19 +241,55 @@ export async function adminMutationAction(
           image_url: imageUrl.data,
           category_id: categoryId.data,
           price: price.data,
+          ...(serviceKind === "DIGITAL" ? {
+            tax_base0: taxBase0.data,
+            tax_baseimp: taxBaseimp.data,
+            tax_iva: taxIva.data,
+          } : {}),
           status: status.data,
           sort_order: sortOrder.data,
         };
+        const legacyInput = {
+          title: input.title,
+          slug: input.slug,
+          short_description: input.short_description,
+          description: input.description,
+          icon: input.icon,
+          image_url: input.image_url,
+          category_id: input.category_id,
+          price: input.price,
+          status: input.status,
+          sort_order: input.sort_order,
+        };
         if (operation === "create") {
-          const { error } = await supabase.from("services").insert(input);
+          let { error } = await supabase.from("services").insert(input);
+          if (error && isMissingServiceKindColumn(error) && serviceKind === "TECHNOLOGICAL") {
+            ({ error } = await supabase.from("services").insert(legacyInput));
+          }
           if (error) {
+            if (serviceKind === "DIGITAL" && isMissingDatafastTaxColumns(error)) {
+              return { error: "Aplica la migración de Datafast en Supabase antes de guardar servicios digitales." };
+            }
+            if (serviceKind === "DIGITAL" && isMissingServiceKindColumn(error)) {
+              return { error: "La sección digital requiere aplicar su migración antes de guardar servicios." };
+            }
             console.error(`Admin service create failed. Supabase code: ${error.code}`);
             return { error: "No se pudo crear el servicio. Comprueba que el slug no esté en uso." };
           }
         } else {
           const id = idSchema.safeParse(recordId);
           if (!id.success) return { error: "El servicio seleccionado no es válido." };
-          const { data, error } = await supabase.from("services").update(input).eq("id", id.data).select("id").maybeSingle();
+          let updateResult = await supabase.from("services").update(input).eq("id", id.data).eq("service_kind", serviceKind).select("id").maybeSingle();
+          if (updateResult.error && isMissingServiceKindColumn(updateResult.error)) {
+            if (serviceKind === "DIGITAL") {
+              return { error: "La sección digital requiere aplicar su migración antes de modificar registros." };
+            }
+            updateResult = await supabase.from("services").update(legacyInput).eq("id", id.data).select("id").maybeSingle();
+          }
+          const { data, error } = updateResult;
+          if (serviceKind === "DIGITAL" && error && isMissingDatafastTaxColumns(error)) {
+            return { error: "Aplica la migración de Datafast en Supabase antes de guardar servicios digitales." };
+          }
           if (error || !data) {
             console.error(`Admin service update failed. Supabase code: ${error?.code ?? "NO_ROW"}`);
             return { error: "No se pudo actualizar el servicio. Comprueba que el slug no esté en uso." };
@@ -413,10 +481,27 @@ export async function adminMutationAction(
     }
 
     if (section === "solicitudes") {
-      if (operation !== "update") return { error: "Solo se permite actualizar el estado de la solicitud." };
+      if (operation !== "update" && operation !== "delete") {
+        return { error: "Operación no permitida para la solicitud." };
+      }
       const id = idSchema.safeParse(recordId);
+      if (!id.success) return { error: "La solicitud seleccionada no es válida." };
+      if (operation === "delete") {
+        const { data, error } = await supabase
+          .from("service_requests")
+          .delete()
+          .eq("id", id.data)
+          .select("id")
+          .maybeSingle();
+        if (error || !data) {
+          console.error(`Admin request delete failed. Supabase code: ${error?.code ?? "NO_ROW"}`);
+          return { error: "No se pudo eliminar la solicitud. Verifica los permisos e inténtalo de nuevo." };
+        }
+        await revalidateAdminPaths(section);
+        return { success: "La solicitud se eliminó correctamente." };
+      }
       const status = z.enum(requestStatuses).safeParse(value(formData, "status"));
-      if (!id.success || !status.success) return { error: "La solicitud o su estado no son válidos." };
+      if (!status.success) return { error: "El estado de la solicitud no es válido." };
       const { data, error } = await supabase
         .from("service_requests")
         .update({ status: status.data })

@@ -3,9 +3,16 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const whatsappMessage =
+const whatsappPhone = "593989894314";
+const defaultWhatsAppMessage =
   "Hola Johnny, estoy interesado en tus servicios tecnológicos.";
-const whatsappUrl = `https://wa.me/593989894314?text=${encodeURIComponent(whatsappMessage)}`;
+
+function getWhatsAppUrl(message: string, pageUrl?: string) {
+  const phone = whatsappPhone.replace(/\D/g, "");
+  if (phone.length < 8 || phone.length > 15) return null;
+  const text = pageUrl ? `${message}\n${pageUrl}` : message;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+}
 
 function WhatsAppIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
@@ -22,18 +29,40 @@ function WhatsAppIcon({ className = "h-6 w-6" }: { className?: string }) {
 
 export function WhatsAppLink({
   className,
+  message = defaultWhatsAppMessage,
+  pagePath,
+  label = "Escríbeme por WhatsApp",
 }: {
   className: string;
+  message?: string;
+  pagePath?: string;
+  label?: string;
 }) {
+  const href = getWhatsAppUrl(message);
+  if (!href) {
+    return (
+      <span className={className} role="status">
+        WhatsApp no está disponible por el momento.
+      </span>
+    );
+  }
+
   return (
     <a
-      href={whatsappUrl}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       className={className}
+      onClick={(event) => {
+        if (!pagePath) return;
+        event.preventDefault();
+        const pageUrl = new URL(pagePath, window.location.origin).toString();
+        const destination = getWhatsAppUrl(message, pageUrl);
+        if (destination) window.open(destination, "_blank", "noopener,noreferrer");
+      }}
     >
       <WhatsAppIcon />
-      <span>Escríbeme por WhatsApp</span>
+      <span>{label}</span>
     </a>
   );
 }
@@ -89,6 +118,9 @@ export default function WhatsAppButton() {
   }, [pathname]);
 
   if (isPrivateRoute || obstructingSectionVisible) return null;
+
+  const whatsappUrl = getWhatsAppUrl(defaultWhatsAppMessage);
+  if (!whatsappUrl) return null;
 
   return (
     <a

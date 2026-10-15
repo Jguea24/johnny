@@ -13,6 +13,7 @@ import { parseYouTubeLink, safeHttpUrl } from "@/lib/portfolio-links";
 type Section =
   | "usuarios"
   | "servicios"
+  | "servicios-digitales"
   | "proyectos"
   | "categorias"
   | "solicitudes"
@@ -82,6 +83,100 @@ const settingKeys: Option[] = [
   { value: "social.facebook", label: "Facebook" },
 ];
 
+const sectionLabels: Partial<Record<Section, string>> = {
+  servicios: "servicio",
+  "servicios-digitales": "servicio digital",
+  proyectos: "proyecto",
+  categorias: "categoría",
+  testimonios: "testimonio",
+  configuracion: "configuración",
+};
+
+const fieldGroups: Partial<Record<Section, Record<string, string>>> = {
+  usuarios: {
+    full_name: "Datos del perfil",
+    phone: "Datos de contacto",
+    avatar_url: "Datos de contacto",
+  },
+  servicios: {
+    title: "Información del servicio",
+    slug: "Información del servicio",
+    short_description: "Información del servicio",
+    description: "Información del servicio",
+    category_id: "Clasificación y presentación",
+    icon: "Clasificación y presentación",
+    image_url: "Clasificación y presentación",
+    price: "Publicación y precio",
+    status: "Publicación y precio",
+    sort_order: "Publicación y precio",
+  },
+  "servicios-digitales": {
+    title: "Información del servicio digital",
+    slug: "Información del servicio digital",
+    short_description: "Información del servicio digital",
+    description: "Información del servicio digital",
+    category_id: "Clasificación y presentación",
+    icon: "Clasificación y presentación",
+    image_url: "Clasificación y presentación",
+    price: "Publicación y precio",
+    tax_base0: "Impuestos para Datafast",
+    tax_baseimp: "Impuestos para Datafast",
+    tax_iva: "Impuestos para Datafast",
+    status: "Publicación y precio",
+    sort_order: "Publicación y precio",
+  },
+  proyectos: {
+    title: "Información del proyecto",
+    slug: "Información del proyecto",
+    short_description: "Información del proyecto",
+    description: "Información del proyecto",
+    category_id: "Clasificación y tecnologías",
+    technologies: "Clasificación y tecnologías",
+    main_image: "Multimedia y enlaces",
+    demo_url: "Multimedia y enlaces",
+    repository_url: "Multimedia y enlaces",
+    status: "Publicación",
+    featured: "Publicación",
+  },
+  categorias: {
+    name: "Datos de la categoría",
+    slug: "Datos de la categoría",
+    description: "Datos de la categoría",
+    type: "Clasificación",
+  },
+  solicitudes: { status: "Estado de la solicitud" },
+  mensajes: { status: "Estado del mensaje" },
+  testimonios: {
+    name: "Datos de la persona",
+    position: "Datos de la persona",
+    company: "Datos de la persona",
+    comment: "Testimonio",
+    photo_url: "Presentación y publicación",
+    rating: "Presentación y publicación",
+    status: "Presentación y publicación",
+  },
+  configuracion: {
+    key: "Configuración pública",
+    value: "Configuración pública",
+  },
+};
+
+const statusLabels: Record<string, string> = {
+  DRAFT: "Borrador",
+  PUBLISHED: "Publicado",
+  ARCHIVED: "Archivado",
+  ACTIVE: "Activo",
+  INACTIVE: "Inactivo",
+  PENDIENTE: "Pendiente",
+  EN_REVISION: "En revisión",
+  EN_PROCESO: "En proceso",
+  COMPLETADA: "Completada",
+  CANCELADA: "Cancelada",
+  NUEVO: "Nuevo",
+  LEIDO: "Leído",
+  RESPONDIDO: "Respondido",
+};
+
 function field(
   name: string,
   label: string,
@@ -103,6 +198,7 @@ function fieldsFor(
         field("avatar_url", "URL de imagen de perfil", "url", { maxLength: 2048 }),
       ];
     case "servicios":
+    case "servicios-digitales":
       return [
         field("title", "Título", "text", { required: true, maxLength: 180 }),
         field("slug", "Slug", "text", { required: true, maxLength: 120 }),
@@ -113,7 +209,14 @@ function fieldsFor(
         }),
         field("icon", "Icono", "text", { maxLength: 80 }),
         field("image_url", "URL de imagen", "url", { maxLength: 2048 }),
-        field("price", "Precio (opcional)", "number", { min: "0", step: "0.01" }),
+        field("price", "Precio total (opcional)", "number", { min: "0", step: "0.01" }),
+        ...(section === "servicios-digitales"
+          ? [
+              field("tax_base0", "Base 0%", "number", { required: true, min: "0", step: "0.01", group: "Impuestos para Datafast" }),
+              field("tax_baseimp", "Base imponible", "number", { required: true, min: "0", step: "0.01", group: "Impuestos para Datafast" }),
+              field("tax_iva", "IVA incluido", "number", { required: true, min: "0", step: "0.01", group: "Impuestos para Datafast" }),
+            ]
+          : []),
         field("status", "Estado", "select", { required: true, options: commonStatusOptions.service }),
         field("sort_order", "Orden", "number", { required: true, step: "1" }),
       ];
@@ -189,6 +292,7 @@ function AdminForm({
   const [imagePreviewFailed, setImagePreviewFailed] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const objectUrlRef = useRef<string | null>(null);
   const storedImageUrl = safeHttpUrl(
@@ -197,6 +301,19 @@ function AdminForm({
   const previewImageUrl = filePreviewUrl || storedImageUrl;
   const previewDemoUrl = typeof formValues.demo_url === "string" ? formValues.demo_url : "";
   const youtubePreview = parseYouTubeLink(previewDemoUrl);
+  function cancelFormChanges() {
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    objectUrlRef.current = null;
+    setSelectedImage(null);
+    setFilePreviewUrl(null);
+    setImagePreviewFailed(false);
+    setFormValues(values ?? {});
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (operation === "update") {
+      const details = formRef.current?.closest("details");
+      if (details) details.open = false;
+    }
+  }
   useEffect(
     () => () => {
       if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
@@ -229,7 +346,10 @@ function AdminForm({
       <form
         action={action}
         onSubmit={(event) => {
-          if (!window.confirm(`¿Seguro que deseas eliminar ${title ?? "este registro"}? Esta acción no se puede deshacer.`)) {
+          const confirmation = section === "solicitudes"
+            ? `¿Eliminar definitivamente la solicitud de ${title ?? "esta persona"}? Esta acción no se puede deshacer.`
+            : `¿Seguro que deseas eliminar ${title ?? "este registro"}? Esta acción no se puede deshacer.`;
+          if (!window.confirm(confirmation)) {
             event.preventDefault();
           }
         }}
@@ -244,6 +364,7 @@ function AdminForm({
         <button
           type="submit"
           disabled={pending}
+          aria-label={section === "solicitudes" ? `Eliminar solicitud de ${title ?? "esta persona"}` : undefined}
           className="min-h-10 rounded-lg border border-rose-400/30 px-3 text-sm font-medium text-rose-200 hover:bg-rose-400/10 disabled:opacity-60"
         >
           {pending ? "Eliminando…" : "Eliminar"}
@@ -258,11 +379,14 @@ function AdminForm({
   }
 
   return (
-    <form action={action} className="grid gap-4 md:grid-cols-2">
+    <form ref={formRef} action={action} className="grid min-w-0 gap-4 md:grid-cols-2">
       <input type="hidden" name="section" value={section} />
       <input type="hidden" name="operation" value={operation} />
       {recordId ? <input type="hidden" name="record_id" value={recordId} /> : null}
       {fields.map((item, index) => {
+        if (section === "proyectos" && operation === "create" && item.name === "status") {
+          return null;
+        }
         const value = formValues[item.name];
         const id = `${operation}-${recordId ?? "new"}-${item.name}`;
         const common = {
@@ -272,22 +396,28 @@ function AdminForm({
           maxLength: item.maxLength,
           className: "field-control",
         };
-        const projectGroup = section === "proyectos"
-          ? index < 4 ? "Información general" : index < 8 ? "Clasificación" : "Multimedia y enlaces"
-          : null;
+        const group = fieldGroups[section]?.[item.name];
+        const previousGroup = index > 0
+          ? fieldGroups[section]?.[fields[index - 1]?.name]
+          : undefined;
         return (
           <Fragment key={item.name}>
-          {projectGroup && (index === 0 || index === 4 || index === 8) ? (
-            <h3 className="border-b border-white/10 pb-2 pt-2 text-sm font-semibold uppercase tracking-wide text-cyan-200 md:col-span-2">
-              {projectGroup}
+          {group && group !== previousGroup ? (
+            <h3 className="mt-2 border-b border-white/10 pb-2 text-sm font-semibold uppercase tracking-[0.12em] text-cyan-200 md:col-span-2">
+              {group}
             </h3>
           ) : null}
           <div
-            className={item.kind === "textarea" ? "md:col-span-2" : ""}
+            className={item.kind === "textarea" || item.kind === "file" ? "md:col-span-2" : ""}
           >
-            <label htmlFor={id} className="mb-1.5 block text-xs font-medium text-slate-300">
-              {item.label}
-            </label>
+            {item.kind !== "checkbox" ? (
+              <div className="mb-1.5 flex min-h-5 items-center justify-between gap-3">
+                <label htmlFor={id} className="text-sm font-medium text-slate-200">
+                  {item.label}{item.required ? <span className="ml-1 text-cyan-300" aria-hidden="true">*</span> : null}
+                </label>
+                {!item.required ? <span className="text-xs text-slate-500">Opcional</span> : null}
+              </div>
+            ) : null}
             {item.kind === "textarea" ? (
               <textarea
                 {...common}
@@ -336,7 +466,7 @@ function AdminForm({
                 {selectedImage ? <p className="mt-1 break-all text-xs text-cyan-200">Imagen seleccionada: {selectedImage.name}</p> : null}
               </>
             ) : item.kind === "checkbox" ? (
-              <label className="flex min-h-11 items-center gap-3 text-sm text-slate-200">
+              <label htmlFor={id} className="flex min-h-11 items-center gap-3 text-sm text-slate-200">
                 <input
                   id={id}
                   name={item.name}
@@ -345,7 +475,7 @@ function AdminForm({
                   onChange={(event) => setFormValues((current) => ({ ...current, [item.name]: event.target.checked }))}
                   className="h-4 w-4 accent-cyan-400"
                 />
-                {item.label}
+                <span>{item.label}{item.required ? <span className="ml-1 text-cyan-300" aria-hidden="true">*</span> : null}</span>
               </label>
             ) : (
               <input
@@ -404,23 +534,43 @@ function AdminForm({
           {state.error || state.success}
         </p>
       ) : null}
-      <div className="md:col-span-2">
+      <div className="space-y-3 border-t border-white/10 pt-4 md:col-span-2">
+        <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-300">
+          Acciones
+        </h3>
+        {section === "proyectos" ? (
+          <p className="text-xs leading-5 text-slate-500">
+            {operation === "create"
+              ? "Elige si quieres dejar el proyecto como borrador o publicarlo."
+              : "Guarda el estado actual o selecciona una acción de publicación."}
+          </p>
+        ) : null}
         {section === "proyectos" ? (
           <div className="flex flex-wrap gap-3">
+            {operation === "update" ? (
+              <button type="submit" disabled={pending} className="button-primary min-h-11 px-4">
+                {pending ? "Guardando…" : "Guardar cambios"}
+              </button>
+            ) : null}
             <button type="submit" name="project_intent" value="DRAFT" disabled={pending} className="button-secondary min-h-11 px-4 disabled:opacity-60">
               {pending ? "Guardando…" : "Guardar como borrador"}
             </button>
-            <button type="submit" name="project_intent" value="PUBLISHED" disabled={pending} className="button-primary min-h-11 rounded-lg px-4 disabled:opacity-60">
+            <button type="submit" name="project_intent" value="PUBLISHED" disabled={pending} className={operation === "create" ? "button-primary min-h-11 px-4 disabled:opacity-60" : "button-secondary min-h-11 px-4 disabled:opacity-60"}>
               {pending ? "Guardando…" : operation === "create" ? "Publicar proyecto" : "Publicar / actualizar"}
             </button>
-            <button type="submit" disabled={pending} className="min-h-11 rounded-lg border border-white/15 px-4 text-sm text-slate-200 disabled:opacity-60">
-              {pending ? "Guardando…" : "Guardar cambios"}
+            <button type="button" onClick={cancelFormChanges} disabled={pending} className="button-secondary min-h-11 px-4 disabled:opacity-50">
+              Cancelar
             </button>
           </div>
         ) : (
-          <button type="submit" disabled={pending} className="button-primary min-h-11 rounded-lg px-4">
-            {pending ? "Guardando…" : operation === "create" ? "Crear registro" : "Guardar cambios"}
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button type="submit" disabled={pending} className="button-primary min-h-11 px-4">
+              {pending ? "Guardando…" : operation === "create" ? "Crear registro" : "Guardar cambios"}
+            </button>
+            <button type="button" onClick={cancelFormChanges} disabled={pending} className="button-secondary min-h-11 px-4 disabled:opacity-50">
+              Cancelar
+            </button>
+          </div>
         )}
       </div>
     </form>
@@ -442,12 +592,12 @@ export default function AdminDataManager({
   if (section === "proyectos") {
     const projectFieldOrder = [
       "title", "slug", "short_description", "description", "category_id",
-      "technologies", "status", "featured", "main_image", "demo_url", "repository_url",
+      "technologies", "main_image", "demo_url", "repository_url", "status", "featured",
     ];
     fields.sort((a, b) => projectFieldOrder.indexOf(a.name) - projectFieldOrder.indexOf(b.name));
   }
-  const canCreate = ["servicios", "proyectos", "categorias", "testimonios", "configuracion"].includes(section);
-  const canDelete = ["servicios", "proyectos", "categorias", "mensajes", "testimonios", "configuracion"].includes(section);
+  const canCreate = ["servicios", "servicios-digitales", "proyectos", "categorias", "testimonios", "configuracion"].includes(section);
+  const canDelete = ["servicios", "servicios-digitales", "proyectos", "categorias", "solicitudes", "mensajes", "testimonios", "configuracion"].includes(section);
   const filteredRecords = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("es");
     if (!normalized) return records;
@@ -465,9 +615,11 @@ export default function AdminDataManager({
     <div className="space-y-8">
       {canCreate ? (
         <section className="surface-card border-cyan-300/20 p-5 sm:p-6">
-          <h2 className="text-lg font-semibold text-white">Crear registro</h2>
+          <h2 className="text-lg font-semibold text-white">
+            Crear {sectionLabels[section] ?? "registro"}
+          </h2>
           <p className="mt-1 text-sm text-slate-400">
-            Completa los campos según el esquema disponible.
+            Completa la información por secciones. Los campos marcados con * son obligatorios.
           </p>
           {section === "proyectos" && categories.length === 0 ? (
             <p className="mt-3 rounded-lg border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-sm text-amber-100">
@@ -527,6 +679,19 @@ export default function AdminDataManager({
                       {record.details}
                     </p>
                   </div>
+                  {typeof record.fields.status === "string" ? (
+                    <span
+                      className={`inline-flex min-h-7 shrink-0 items-center rounded-full border px-2.5 text-xs font-semibold ${
+                        record.fields.status === "PENDIENTE"
+                          ? "border-amber-300/30 bg-amber-300/10 text-amber-100"
+                          : record.fields.status === "NUEVO"
+                            ? "border-cyan-300/30 bg-cyan-300/10 text-cyan-100"
+                            : "border-white/10 bg-white/[0.04] text-slate-300"
+                      }`}
+                    >
+                      {statusLabels[record.fields.status] ?? record.fields.status}
+                    </span>
+                  ) : null}
                   {canDelete ? (
                     <AdminForm
                       section={section}

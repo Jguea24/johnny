@@ -27,7 +27,7 @@ export default function Footer({
 
         <nav aria-label="Enlaces del sitio" className="flex flex-col items-start gap-3 text-sm">
           <p className="mb-1 font-semibold text-slate-200">Explorar</p>
-          <Link href="/#sobre-mi" className="text-slate-400 transition hover:text-cyan-200">Sobre mÃ­ y equipo</Link>
+          <Link href="/#sobre-mi" className="text-slate-400 transition hover:text-cyan-200">Sobre mi­ y equipo</Link>
           <Link href="/servicios" className="text-slate-400 transition hover:text-cyan-200">Servicios</Link>
           <Link href="/proyectos" className="text-slate-400 transition hover:text-cyan-200">Proyectos</Link>
           <Link href="/contacto" className="text-slate-400 transition hover:text-cyan-200">Contacto</Link>

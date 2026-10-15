@@ -188,6 +188,10 @@ function SlideEditor({
         <input type="hidden" name="slide_id" value={slide.id} />
       ) : null}
       <div className="grid content-start gap-4 sm:grid-cols-2">
+        <div className="border-b border-white/10 pb-2 sm:col-span-2">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-cyan-200">Contenido de la diapositiva</h3>
+          <p className="mt-1 text-xs text-slate-500">Define el título y el mensaje que verá la persona visitante.</p>
+        </div>
         <div className="sm:col-span-2">
           <label className={labelClass} htmlFor={`slide-title-${slide?.id ?? "new"}`}>
             Título
@@ -221,6 +225,9 @@ function SlideEditor({
             onChange={(event) => updateDraft("description", event.target.value)}
             className={`${fieldClass} resize-y py-2`}
           />
+        </div>
+        <div className="border-b border-white/10 pb-2 sm:col-span-2">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-cyan-200">Medio y accesibilidad</h3>
         </div>
         <div>
           <label
@@ -331,6 +338,9 @@ function SlideEditor({
             ) : null}
           </div>
         ) : null}
+        <div className="border-b border-white/10 pb-2 sm:col-span-2">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-cyan-200">Botón y orden</h3>
+        </div>
         <div>
           <label
             className={labelClass}
@@ -428,7 +438,8 @@ function SlideEditor({
           ) : null}
         </div>
       </div>
-      <div className="space-y-3 xl:col-span-2">
+      <div className="space-y-3 border-t border-white/10 pt-4 xl:col-span-2">
+        <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-300">Acciones</h3>
         <ResultMessage state={state} />
         <button
           type="submit"
@@ -591,7 +602,8 @@ function CarouselSettingsForm({
           Mostrar indicadores
         </label>
       </div>
-      <div className="space-y-3 sm:col-span-2">
+      <div className="space-y-3 border-t border-white/10 pt-4 sm:col-span-2">
+        <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-300">Acciones</h3>
         <ResultMessage state={state} />
         <button type="submit" disabled={pending} className={buttonClass}>
           {pending ? "Guardando…" : "Guardar configuración"}

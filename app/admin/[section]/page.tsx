@@ -5,7 +5,9 @@ import AdminDataManager, {
   type AdminRecord,
 } from "@/components/admin/AdminDataManager";
 import { requireAdmin } from "@/lib/auth/identity";
+import { isMissingServiceKindColumn } from "@/lib/service-kind";
 import { publicSiteSettingKeys } from "@/lib/site-settings";
+import type { Database } from "@/types/database";
 
 const sectionMeta = {
   usuarios: {
@@ -15,6 +17,10 @@ const sectionMeta = {
   servicios: {
     title: "Servicios",
     description: "Crea, edita, publica o elimina servicios del catálogo.",
+  },
+  "servicios-digitales": {
+    title: "Servicios digitales",
+    description: "Crea, edita, publica o elimina las ofertas de servicios digitales.",
   },
   proyectos: {
     title: "Proyectos",
@@ -26,7 +32,7 @@ const sectionMeta = {
   },
   solicitudes: {
     title: "Solicitudes",
-    description: "Revisa solicitudes y actualiza únicamente su estado permitido.",
+    description: "Revisa, actualiza el estado o elimina solicitudes no deseadas.",
   },
   mensajes: {
     title: "Mensajes de contacto",
@@ -44,6 +50,20 @@ const sectionMeta = {
 
 type Section = keyof typeof sectionMeta;
 type PageProps = { params: Promise<{ section: string }> };
+type ServiceAdminRow = Pick<
+  Database["public"]["Tables"]["services"]["Row"],
+  | "id"
+  | "title"
+  | "slug"
+  | "short_description"
+  | "description"
+  | "category_id"
+  | "icon"
+  | "image_url"
+  | "price"
+  | "status"
+  | "sort_order"
+> & Partial<Pick<Database["public"]["Tables"]["services"]["Row"], "service_kind" | "tax_base0" | "tax_baseimp" | "tax_iva">>;
 
 function text(value: string | number | boolean | null | undefined): string {
   if (value === null || value === undefined) return "";
@@ -86,22 +106,53 @@ async function loadSection(section: Section): Promise<{
         },
       ),
     );
-  } else if (section === "servicios") {
+  } else if (section === "servicios" || section === "servicios-digitales") {
+    const serviceKind = section === "servicios-digitales" ? "DIGITAL" : "TECHNOLOGICAL";
+    const servicesQuery = serviceKind === "DIGITAL"
+      ? supabase
+          .from("services")
+          .select("id,title,slug,short_description,description,category_id,icon,image_url,price,status,sort_order,service_kind,tax_base0,tax_baseimp,tax_iva")
+          .eq("service_kind", serviceKind)
+          .order("sort_order", { ascending: true })
+          .limit(200)
+      : supabase
+          .from("services")
+          .select("id,title,slug,short_description,description,category_id,icon,image_url,price,status,sort_order,service_kind")
+          .eq("service_kind", serviceKind)
+          .order("sort_order", { ascending: true })
+          .limit(200);
     const [servicesResult, categoriesResult] = await Promise.all([
-      supabase
+      servicesQuery,
+      supabase.from("categories").select("id,name,type").eq("type", "SERVICE"),
+    ]);
+    let serviceRows: ServiceAdminRow[] = servicesResult.data ?? [];
+    if (servicesResult.error) {
+      const errorText = `${servicesResult.error.message ?? ""} ${servicesResult.error.details ?? ""}`.toLowerCase();
+      if (serviceKind === "DIGITAL" && (errorText.includes("tax_base0") || errorText.includes("tax_baseimp") || errorText.includes("tax_iva"))) {
+        throw new Error("ADMIN_SCHEMA:datafast_tax_fields_missing");
+      }
+      if (!isMissingServiceKindColumn(servicesResult.error)) {
+        throw new Error(`ADMIN_QUERY:services:${servicesResult.error.code}`);
+      }
+      if (serviceKind === "DIGITAL") {
+        throw new Error("ADMIN_SCHEMA:service_kind_missing");
+      }
+      const legacyServicesResult = await supabase
         .from("services")
         .select("id,title,slug,short_description,description,category_id,icon,image_url,price,status,sort_order")
         .order("sort_order", { ascending: true })
-        .limit(200),
-      supabase.from("categories").select("id,name,type").eq("type", "SERVICE"),
-    ]);
-    if (servicesResult.error) throw new Error(`ADMIN_QUERY:services:${servicesResult.error.code}`);
+        .limit(200);
+      if (legacyServicesResult.error) {
+        throw new Error(`ADMIN_QUERY:services:${legacyServicesResult.error.code}`);
+      }
+      serviceRows = legacyServicesResult.data ?? [];
+    }
     if (categoriesResult.error) throw new Error(`ADMIN_QUERY:service_categories:${categoriesResult.error.code}`);
     categories = (categoriesResult.data ?? []).map((item) => ({
       value: item.id,
       label: item.name,
     }));
-    records = (servicesResult.data ?? []).map((row) =>
+    records = serviceRows.map((row) =>
       createRecord(
         row.id,
         row.title,
@@ -115,6 +166,9 @@ async function loadSection(section: Section): Promise<{
           icon: row.icon,
           image_url: row.image_url,
           price: row.price === null ? "" : text(row.price),
+          tax_base0: text(row.tax_base0 ?? 0),
+          tax_baseimp: text(row.tax_baseimp ?? 0),
+          tax_iva: text(row.tax_iva ?? 0),
           status: row.status,
           sort_order: text(row.sort_order),
         },
@@ -184,7 +238,7 @@ async function loadSection(section: Section): Promise<{
     records = (data ?? []).map((row) =>
       createRecord(
         row.id,
-        `${row.name} · ${row.status}`,
+        row.name,
         `${row.email}${row.phone ? ` · ${row.phone}` : ""}${row.company ? ` · ${row.company}` : ""} · ${new Date(row.created_at).toLocaleDateString("es")}\n${row.description}`,
         { status: row.status },
       ),
@@ -199,7 +253,7 @@ async function loadSection(section: Section): Promise<{
     records = (data ?? []).map((row) =>
       createRecord(
         row.id,
-        `${row.subject} · ${row.status}`,
+        row.subject,
         `${row.name} · ${row.email}${row.phone ? ` · ${row.phone}` : ""} · ${new Date(row.created_at).toLocaleDateString("es")}\n${row.message}`,
         { status: row.status },
       ),
@@ -260,6 +314,8 @@ async function AdminSectionContent({ params }: PageProps) {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "UnknownError";
     const categoryQueryError = errorMessage.match(/^ADMIN_QUERY:project_categories:([A-Z0-9]+)$/);
+    const digitalSchemaPending = errorMessage === "ADMIN_SCHEMA:service_kind_missing";
+    const datafastSchemaPending = errorMessage === "ADMIN_SCHEMA:datafast_tax_fields_missing";
     console.error(
       categoryQueryError
         ? `Unable to load project categories. Supabase code: ${categoryQueryError[1]}`
@@ -271,14 +327,17 @@ async function AdminSectionContent({ params }: PageProps) {
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-400">
             Administración
           </p>
-          <h1 className="mt-2 text-3xl font-bold">{sectionMeta[section].title}</h1>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{sectionMeta[section].title}</h1>
         </header>
         <p
           className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-5 text-sm leading-6 text-rose-200"
           role="alert"
         >
-          No fue posible cargar esta sección. Comprueba la política RLS
-          administrativa de su tabla y vuelve a intentarlo.
+          {digitalSchemaPending
+            ? "La sección digital estará disponible cuando se aplique la migración de servicios digitales en Supabase."
+            : datafastSchemaPending
+              ? "Aplica la migración de Datafast en Supabase para gestionar servicios digitales con cobro."
+            : "No fue posible cargar esta sección. Comprueba la política RLS administrativa de su tabla y vuelve a intentarlo."}
         </p>
       </main>
     );
@@ -291,7 +350,7 @@ async function AdminSectionContent({ params }: PageProps) {
         <p className="section-eyebrow">
           Administración
         </p>
-          <h1 className="section-title">
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
           {sectionMeta[section].title}
         </h1>
         <p className="mt-3 text-slate-400">
@@ -321,9 +380,13 @@ export default function AdminSectionPage({ params }: PageProps) {
   return (
     <Suspense
       fallback={
-        <p className="py-20 text-center text-slate-400" aria-busy="true">
-          Cargando registros…
-        </p>
+        <div className="space-y-5 py-4" aria-busy="true" aria-label="Cargando registros administrativos">
+          <div className="h-24 max-w-xl animate-pulse rounded-2xl bg-white/[0.04] motion-reduce:animate-none" />
+          <div className="h-16 animate-pulse rounded-xl bg-white/[0.03] motion-reduce:animate-none" />
+          {Array.from({ length: 3 }, (_, index) => (
+            <div key={index} className="surface-card h-40 animate-pulse bg-white/[0.025] motion-reduce:animate-none" />
+          ))}
+        </div>
       }
     >
       <AdminSectionContent params={params} />

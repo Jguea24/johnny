@@ -3,7 +3,8 @@ import "server-only";
 import { io } from "next/cache";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
-import type { Database } from "@/types/database";
+import { isMissingServiceKindColumn } from "@/lib/service-kind";
+import type { Database, ServiceKind } from "@/types/database";
 
 type ServiceRow = Database["public"]["Tables"]["services"]["Row"];
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
@@ -21,6 +22,7 @@ export type PublicService = Pick<
   | "icon"
   | "image_url"
   | "price"
+  | "service_kind"
   | "category_id"
 >;
 
@@ -58,7 +60,7 @@ export type PublicCategory = Pick<CategoryRow, "id" | "name" | "type">;
 
 export type PublicListing<T> =
   | { status: "ready"; data: T[] }
-  | { status: "error" | "unconfigured"; data: [] };
+  | { status: "error" | "unconfigured"; data: []; message?: string };
 
 export type PublicRecord<T> =
   | { status: "ready"; data: T }
@@ -141,22 +143,52 @@ export async function getPublicCategories(
   return loadCategories(type ? query.eq("type", type) : query);
 }
 
-export async function getPublicServices(): Promise<
+export async function getPublicServices(
+  serviceKind: ServiceKind = "TECHNOLOGICAL",
+): Promise<
   PublicListing<PublicService>
 > {
   if (!getSupabaseConfig()) return emptyListing("unconfigured");
   await io();
   const supabase = await createClient();
-  return loadListing(
-    supabase
-      .from("services")
-      .select(
-        "id,title,slug,short_description,description,icon,image_url,price,category_id",
-      )
-      .eq("status", "ACTIVE")
-      .order("sort_order", { ascending: true }),
-    "services",
-  );
+  const result = await supabase
+    .from("services")
+    .select(
+      "id,title,slug,short_description,description,icon,image_url,price,category_id,service_kind",
+    )
+    .eq("service_kind", serviceKind)
+    .eq("status", "ACTIVE")
+    .order("sort_order", { ascending: true });
+
+  if (result.error) {
+    if (isMissingServiceKindColumn(result.error)) {
+      if (serviceKind === "TECHNOLOGICAL") {
+        const legacyResult = await supabase
+          .from("services")
+          .select("id,title,slug,short_description,description,icon,image_url,price,category_id")
+          .eq("status", "ACTIVE")
+          .order("sort_order", { ascending: true });
+        if (legacyResult.error) {
+          logReadError("services legacy schema", legacyResult.error);
+          return emptyListing("error");
+        }
+        return {
+          status: "ready",
+          data: (legacyResult.data ?? []).map((service) => ({ ...service, service_kind: "TECHNOLOGICAL" as const })),
+        };
+      }
+      return {
+        status: "error",
+        data: [],
+        message:
+          "El catálogo digital estará disponible cuando se actualice el esquema de la base de datos.",
+      };
+    }
+    logReadError("services", result.error);
+    return emptyListing("error");
+  }
+
+  return { status: "ready", data: result.data ?? [] };
 }
 
 export async function getPublicService(
@@ -165,17 +197,28 @@ export async function getPublicService(
   if (!getSupabaseConfig()) return emptyRecord("unconfigured");
   await io();
   const supabase = await createClient();
-  return loadRecord(
-    supabase
+  const result = await supabase
+    .from("services")
+    .select("id,title,slug,short_description,description,icon,image_url,price,category_id,service_kind")
+    .eq("status", "ACTIVE")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (result.error && isMissingServiceKindColumn(result.error)) {
+    const legacyResult = await supabase
       .from("services")
-      .select(
-        "id,title,slug,short_description,description,icon,image_url,price,category_id",
-      )
+      .select("id,title,slug,short_description,description,icon,image_url,price,category_id")
       .eq("status", "ACTIVE")
       .eq("slug", slug)
-      .maybeSingle(),
-    "service detail",
-  );
+      .maybeSingle();
+    if (legacyResult.error) {
+      logReadError("service detail legacy schema", legacyResult.error);
+      return emptyRecord("error");
+    }
+    return legacyResult.data
+      ? { status: "ready", data: { ...legacyResult.data, service_kind: "TECHNOLOGICAL" } }
+      : emptyRecord("not-found");
+  }
+  return loadRecord(Promise.resolve(result), "service detail");
 }
 
 export async function getPublicProjects(): Promise<

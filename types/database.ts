@@ -8,6 +8,7 @@ export type Json =
 
 export type UserRole = "USER" | "ADMIN";
 export type CategoryType = "SERVICE" | "PROJECT";
+export type ServiceKind = "TECHNOLOGICAL" | "DIGITAL";
 export type ServiceStatus = "DRAFT" | "ACTIVE" | "INACTIVE";
 export type ProjectStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type ServiceRequestStatus =
@@ -78,6 +79,7 @@ export type Database = {
       services: Table<
         Timestamped & {
           id: string;
+          service_kind: ServiceKind;
           category_id: string | null;
           title: string;
           slug: string;
@@ -86,11 +88,15 @@ export type Database = {
           icon: string | null;
           image_url: string | null;
           price: number | null;
+          tax_base0: number;
+          tax_baseimp: number;
+          tax_iva: number;
           status: ServiceStatus;
           sort_order: number;
         },
         {
           id?: string;
+          service_kind?: ServiceKind;
           category_id?: string | null;
           title: string;
           slug: string;
@@ -99,6 +105,9 @@ export type Database = {
           icon?: string | null;
           image_url?: string | null;
           price?: number | null;
+          tax_base0?: number;
+          tax_baseimp?: number;
+          tax_iva?: number;
           status?: ServiceStatus;
           sort_order?: number;
           created_at?: string;
@@ -167,6 +176,58 @@ export type Database = {
           budget?: number | null;
           status?: ServiceRequestStatus;
           priority?: RequestPriority;
+          created_at?: string;
+          updated_at?: string;
+        }
+      >;
+      service_orders: Table<
+        Timestamped & {
+          id: string;
+          service_id: string;
+          service_title: string;
+          amount: number;
+          tax_base0: number;
+          tax_baseimp: number;
+          tax_iva: number;
+          currency: "USD";
+          status: "PENDING" | "PAID" | "FAILED";
+          customer_given_name: string;
+          customer_middle_name: string;
+          customer_surname: string;
+          customer_email: string;
+          customer_phone: string;
+          customer_identification: string;
+          customer_address: string;
+          customer_postcode: string;
+          merchant_transaction_id: string;
+          datafast_checkout_id: string | null;
+          datafast_payment_id: string | null;
+          datafast_result_code: string | null;
+          datafast_payment_brand: string | null;
+        },
+        {
+          id?: string;
+          service_id: string;
+          service_title: string;
+          amount: number;
+          tax_base0: number;
+          tax_baseimp: number;
+          tax_iva: number;
+          currency?: "USD";
+          status?: "PENDING" | "PAID" | "FAILED";
+          customer_given_name: string;
+          customer_middle_name: string;
+          customer_surname: string;
+          customer_email: string;
+          customer_phone: string;
+          customer_identification: string;
+          customer_address: string;
+          customer_postcode: string;
+          merchant_transaction_id: string;
+          datafast_checkout_id?: string | null;
+          datafast_payment_id?: string | null;
+          datafast_result_code?: string | null;
+          datafast_payment_brand?: string | null;
           created_at?: string;
           updated_at?: string;
         }
