@@ -24,6 +24,7 @@ export type ServiceRequestStatus =
 export type RequestPriority = "BAJA" | "NORMAL" | "ALTA" | "URGENTE";
 export type ContactMessageStatus = "NUEVO" | "LEIDO" | "RESPONDIDO" | "ARCHIVADO";
 export type TestimonialStatus = "DRAFT" | "ACTIVE" | "INACTIVE";
+export type AppointmentStatus = "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
 export type HeroMediaType = "image" | "video";
 export type TeamMemberType = "FOUNDER" | "COLLABORATOR";
 
@@ -212,6 +213,62 @@ export type Database = {
           budget?: number | null;
           status?: ServiceRequestStatus;
           priority?: RequestPriority;
+          created_at?: string;
+          updated_at?: string;
+        }
+      >;
+      appointment_slots: Table<
+        {
+          id: string;
+          service_id: string;
+          starts_at: string;
+          ends_at: string;
+          time_zone: string;
+          active: boolean;
+          created_by: string;
+          created_at: string;
+        },
+        {
+          id?: string;
+          service_id: string;
+          starts_at: string;
+          ends_at: string;
+          time_zone: string;
+          active?: boolean;
+          created_by: string;
+          created_at?: string;
+        }
+      >;
+      appointments: Table<
+        Timestamped & {
+          id: string;
+          user_id: string;
+          service_id: string;
+          service_title: string;
+          slot_id: string;
+          starts_at: string;
+          ends_at: string;
+          time_zone: string;
+          customer_name: string;
+          customer_email: string;
+          customer_phone: string;
+          status: AppointmentStatus;
+          cancelled_at: string | null;
+        },
+        {
+          id?: string;
+          user_id: string;
+          service_id: string;
+          service_title: string;
+          slot_id: string;
+          starts_at: string;
+          ends_at: string;
+          time_zone: string;
+          customer_name: string;
+          customer_email: string;
+          customer_phone?: string;
+          status?: AppointmentStatus;
+          cancelled_at?: string | null;
           created_at?: string;
           updated_at?: string;
         }
@@ -502,6 +559,7 @@ export type Database = {
       request_priority: RequestPriority;
       contact_message_status: ContactMessageStatus;
       testimonial_status: TestimonialStatus;
+      appointment_status: AppointmentStatus;
     };
     CompositeTypes: Record<string, never>;
   };

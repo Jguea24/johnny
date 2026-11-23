@@ -45,6 +45,15 @@ async function LoginContent({
           sesión.
         </p>
       ) : null}
+      {errorCode === "confirmation" ? (
+        <p
+          className="mb-5 rounded-xl border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100"
+          role="alert"
+        >
+          El enlace de confirmación no es válido o caducó. Inicia sesión para
+          solicitar otro correo.
+        </p>
+      ) : null}
       {errorCode === "auth-required" ? (
         <p
           className="mb-5 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-100"

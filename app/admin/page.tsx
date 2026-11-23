@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth/identity";
 
+
 export const metadata: Metadata = {
   
   title: "Administración",
@@ -13,6 +14,7 @@ const dashboardCards = [
   { key: "services", label: "Servicios", href: "/admin/servicios", color: "text-cyan-200 bg-cyan-300/10" },
   { key: "projects", label: "Proyectos", href: "/admin/proyectos", color: "text-sky-200 bg-sky-300/10" },
   { key: "requests", label: "Solicitudes pendientes", href: "/admin/solicitudes", color: "text-amber-200 bg-amber-300/10" },
+  { key: "appointments", label: "Citas pendientes", href: "/admin/citas", color: "text-emerald-200 bg-emerald-300/10" },
   { key: "messages", label: "Mensajes nuevos", href: "/admin/mensajes", color: "text-rose-200 bg-rose-300/10" },
   { key: "users", label: "Usuarios", href: "/admin/usuarios", color: "text-indigo-200 bg-indigo-300/10" },
   { key: "testimonials", label: "Testimonios", href: "/admin/testimonios", color: "text-violet-200 bg-violet-300/10" },
@@ -22,6 +24,7 @@ const dashboardIconPaths = {
   services: "M14.7 6.3a5 5 0 0 0-6.4 6.4L3 18l3 3 5.3-5.3a5 5 0 0 0 6.4-6.4L14 13l-3-3z",
   projects: "M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
   requests: "M8 4h8 M9 3h6v3H9z M6 5H4v16h16V5h-2 M8 12h8 M8 16h8",
+  appointments: "M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2z M8 14h.01 M12 14h.01 M16 14h.01",
   messages: "M21 11.5a8.5 8.5 0 0 1-12.8 7.3L3 20l1.2-4.1A8.5 8.5 0 1 1 21 11.5z",
   users: "M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M20 8v6 M23 11h-6",
   testimonials: "m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z",
@@ -29,11 +32,12 @@ const dashboardIconPaths = {
 
 async function AdminDashboardContent() {
   const { supabase } = await requireAdmin();
-  const [services, projects, requests, messages, users, testimonials] =
+  const [services, projects, requests, appointments, messages, users, testimonials] =
     await Promise.all([
       supabase.from("services").select("id", { count: "exact", head: true }),
       supabase.from("projects").select("id", { count: "exact", head: true }),
       supabase.from("service_requests").select("id", { count: "exact", head: true }).eq("status", "PENDIENTE"),
+      supabase.from("appointments").select("id", { count: "exact", head: true }).in("status", ["PENDING", "CONFIRMED"]),
       supabase
         .from("contact_messages")
         .select("id", { count: "exact", head: true })
@@ -41,12 +45,13 @@ async function AdminDashboardContent() {
       supabase.from("profiles").select("id", { count: "exact", head: true }),
       supabase.from("testimonials").select("id", { count: "exact", head: true }),
     ]);
-  const results = { services, projects, requests, messages, users, testimonials };
+  const results = { services, projects, requests, appointments, messages, users, testimonials };
   const hasError = Object.values(results).some((result) => result.error);
   const counts = {
     services: services.count,
     projects: projects.count,
     requests: requests.count,
+    appointments: appointments.count,
     messages: messages.count,
     users: users.count,
     testimonials: testimonials.count,

@@ -12,7 +12,7 @@ export default function RegistrationPage() {
     <AuthCard
       eyebrow="Únete"
       title="Crear cuenta"
-      description="Regístrate para administrar tu perfil. El acceso se confirma por correo si la verificación está habilitada."
+      description="Regístrate para administrar tu perfil. Confirma tu correo electrónico antes de iniciar sesión."
     >
       <RegistrationForm />
     </AuthCard>

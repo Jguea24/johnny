@@ -13,6 +13,7 @@ export default function Navbar({ siteTitle }: { siteTitle: string }) {
     { href: "/#servicios", label: "Servicios" },
     { href: "/servicios-digitales", label: "Servicios digitales" },
     { href: "/proyectos", label: "Proyectos" },
+    { href: "/citas", label: "Citas" },
   ];
 
   return (
@@ -26,16 +27,20 @@ export default function Navbar({ siteTitle }: { siteTitle: string }) {
         </Link>
 
         <nav aria-label="Navegación principal" className="hidden items-center gap-3 lg:flex xl:gap-6">
-          {navigation.map((item) => (
+          {navigation.map((item) => {
+            const current = !item.href.includes("#") &&
+              (pathname === item.href || (item.href === "/citas" && pathname.startsWith("/citas/")));
+            return (
             <Link
               key={item.href}
               href={item.href}
-              aria-current={!item.href.includes("#") && pathname === item.href ? "page" : undefined}
-              className={`text-sm transition hover:text-cyan-200 ${!item.href.includes("#") && pathname === item.href ? "font-semibold text-white" : "text-slate-300"}`}
+              aria-current={current ? "page" : undefined}
+              className={`text-sm transition hover:text-cyan-200 ${current ? "font-semibold text-white" : "text-slate-300"}`}
             >
               {item.label}
             </Link>
-          ))}
+            );
+          })}
           <Link
             href="/contacto"
             className="button-primary min-h-11 rounded-full px-5"
@@ -65,17 +70,21 @@ export default function Navbar({ siteTitle }: { siteTitle: string }) {
           {[
             ...navigation,
             { href: "/contacto", label: "Contacto" },
-          ].map((item) => (
+          ].map((item) => {
+            const current = !item.href.includes("#") &&
+              (pathname === item.href || (item.href === "/citas" && pathname.startsWith("/citas/")));
+            return (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setMenuOpen(false)}
-              aria-current={!item.href.includes("#") && pathname === item.href ? "page" : undefined}
-              className={`rounded-xl px-3 py-3 text-sm transition hover:bg-white/5 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${!item.href.includes("#") && pathname === item.href ? "bg-white/[0.05] font-semibold text-white" : "text-slate-200"}`}
+              aria-current={current ? "page" : undefined}
+              className={`rounded-xl px-3 py-3 text-sm transition hover:bg-white/5 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${current ? "bg-white/[0.05] font-semibold text-white" : "text-slate-200"}`}
             >
               {item.label}
             </Link>
-          ))}
+            );
+          })}
         </nav>
       </div>
     </header>

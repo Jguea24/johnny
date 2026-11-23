@@ -14,6 +14,7 @@ type IconName =
   | "categories"
   | "requests"
   | "digitalOrders"
+  | "appointments"
   | "messages"
   | "testimonials"
   | "settings";
@@ -40,6 +41,7 @@ const groups: { label: string; items: { href: string; label: string; icon: IconN
     label: "Operaciones",
     items: [
       { href: "/admin/solicitudes", label: "Solicitudes", icon: "requests" },
+      { href: "/admin/citas", label: "Citas", icon: "appointments" },
       { href: "/admin/pedidos-digitales", label: "Pedidos digitales", icon: "digitalOrders" },
       { href: "/admin/mensajes", label: "Mensajes", icon: "messages" },
     ],
@@ -68,6 +70,7 @@ function NavigationIcon({ name }: { name: IconName }) {
     categories: "M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z M7.5 7.5h.01",
     requests: "M8 4h8 M9 3h6v3H9z M6 5H4v16h16V5h-2 M8 12h8 M8 16h8",
     digitalOrders: "M4 4h16v16H4z M8 8h8 M8 12h8 M8 16h4",
+    appointments: "M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2z M8 14h.01 M12 14h.01 M16 14h.01",
     messages: "M21 11.5a8.5 8.5 0 0 1-12.8 7.3L3 20l1.2-4.1A8.5 8.5 0 1 1 21 11.5z",
     testimonials: "m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z",
     settings: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.7 2.9-.2-.1a1.7 1.7 0 0 0-1.8.2l-.2.1h-3.4l-.1-.2a1.7 1.7 0 0 0-1.6-1l-.2.1-3-1.7.1-.2a1.7 1.7 0 0 0-.2-1.8l-.1-.2v-3.4l.2-.1a1.7 1.7 0 0 0 1-1.6l-.1-.2 1.7-3 .2.1a1.7 1.7 0 0 0 1.8-.2l.2-.1h3.4l.1.2a1.7 1.7 0 0 0 1.6 1l.2-.1 3 1.7-.1.2a1.7 1.7 0 0 0 .2 1.8l.1.2v3.4z",

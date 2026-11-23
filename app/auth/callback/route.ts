@@ -10,6 +10,18 @@ import {
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
+  const authErrorCode = requestUrl.searchParams.get("error_code");
+  if (authErrorCode) {
+    console.error(`Supabase returned an authentication callback error. Code: ${authErrorCode}.`);
+    return NextResponse.redirect(
+      new URL(
+        authErrorCode === "otp_expired"
+          ? "/login?error=confirmation"
+          : "/login?error=callback",
+        requestUrl,
+      ),
+    );
+  }
   if (!code) {
     return NextResponse.redirect(new URL("/login?error=callback", requestUrl));
   }

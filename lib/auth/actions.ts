@@ -21,6 +21,8 @@ import { getConfiguredSiteUrl } from "@/lib/site-url";
 export type AuthActionState = {
   error?: string;
   success?: string;
+  resendEmail?: string;
+  resendAvailable?: boolean;
 };
 
 const credentialsSchema = z.object({
@@ -89,6 +91,36 @@ async function getConfiguredSiteOrigin(): Promise<string> {
   return url.origin;
 }
 
+function getSignupConfirmationUrl(origin: string): string {
+  return new URL("/auth/callback?next=%2Fperfil", origin).toString();
+}
+
+function confirmationEmailError(error: {
+  code?: string;
+  name?: string;
+}): string {
+  if (error.code === "email_address_not_authorized") {
+    return "Supabase rechazó el destinatario porque el SMTP predeterminado solo permite enviar a direcciones autorizadas del equipo. Configura un SMTP personalizado en Supabase.";
+  }
+  if (
+    error.code === "over_email_send_rate_limit" ||
+    error.code === "over_request_rate_limit" ||
+    error.code === "email_rate_limit_exceeded"
+  ) {
+    return "Se alcanzó el límite de correos de autenticación. Espera al menos un minuto antes de volver a intentarlo.";
+  }
+  if (error.name === "AuthRetryableFetchError") {
+    return "No se pudo conectar con Supabase Auth. Inténtalo de nuevo más tarde.";
+  }
+  return "Supabase no pudo procesar el correo de confirmación. Revisa la configuración SMTP del proyecto e inténtalo más tarde.";
+}
+
+function logAuthEmailError(operation: string, error: { code?: string; status?: number }) {
+  console.error(
+    `Supabase Auth ${operation} failed. Code: ${error.code ?? "UNKNOWN"}; status: ${error.status ?? "unknown"}.`,
+  );
+}
+
 export async function signInAction(
   _previous: AuthActionState,
   formData: FormData,
@@ -119,6 +151,7 @@ export async function signInAction(
       if (error.code === "email_not_confirmed") {
         return {
           error: "Confirma tu correo electrónico antes de iniciar sesión.",
+          resendEmail: parsed.data.email.toLowerCase(),
         };
       }
       if (error.code === "over_request_rate_limit") {
@@ -197,10 +230,7 @@ export async function signUpAction(
   let emailRedirectTo: string;
   try {
     const origin = await getConfiguredSiteOrigin();
-    emailRedirectTo = new URL(
-      "/auth/callback?next=%2Fperfil",
-      origin,
-    ).toString();
+    emailRedirectTo = getSignupConfirmationUrl(origin);
   } catch {
     return {
       error:
@@ -218,12 +248,70 @@ export async function signUpAction(
     },
   });
   if (error) {
-    return { error: "No se pudo completar el registro. Inténtalo de nuevo más tarde." };
+    logAuthEmailError("signup", error);
+    return { error: confirmationEmailError(error) };
   }
   if (data.session) redirect("/perfil");
+  if (!data.user) {
+    return {
+      error: "Supabase no devolvió una cuenta para el registro. No se completó la solicitud.",
+    };
+  }
+  if (data.user.identities?.length === 0) {
+    return {
+      success:
+        "Supabase aceptó la solicitud. Si la cuenta puede registrarse, recibirás instrucciones para confirmar el correo. Revisa también spam y promociones.",
+      resendEmail: parsed.data.email.toLowerCase(),
+      resendAvailable: true,
+    };
+  }
   return {
     success:
-      "Si el registro es válido, recibirás un correo para confirmar tu cuenta antes de iniciar sesión.",
+      "La cuenta se creó y está pendiente de confirmación. Supabase aceptó la solicitud de correo; revisa tu bandeja, spam y promociones. El envío no garantiza la entrega final.",
+    resendEmail: parsed.data.email.toLowerCase(),
+    resendAvailable: true,
+  };
+}
+
+export async function resendSignupConfirmationAction(
+  _previous: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const parsed = recoverySchema.safeParse({
+    email: getValue(formData, "email"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Escribe un correo válido." };
+  }
+
+  let emailRedirectTo: string;
+  try {
+    emailRedirectTo = getSignupConfirmationUrl(await getConfiguredSiteOrigin());
+  } catch {
+    return {
+      error:
+        "El reenvío no está configurado para este dominio. Define NEXT_PUBLIC_SITE_URL y añádelo a las URL permitidas de Supabase.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email: parsed.data.email.toLowerCase(),
+    options: { emailRedirectTo },
+  });
+  if (error) {
+    logAuthEmailError("confirmation resend", error);
+    return {
+      error: confirmationEmailError(error),
+      resendEmail: parsed.data.email.toLowerCase(),
+    };
+  }
+
+  return {
+    success:
+      "Supabase aceptó la solicitud de reenvío. Si la cuenta está pendiente de confirmación, revisa tu bandeja, spam y promociones.",
+    resendEmail: parsed.data.email.toLowerCase(),
   };
 }
 

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   requestPasswordResetAction,
+  resendSignupConfirmationAction,
   signInAction,
   signUpAction,
   updatePasswordAction,
@@ -35,12 +36,14 @@ function FormField({
   type = "text",
   autoComplete,
   required = true,
+  defaultValue,
 }: {
   id: string;
   label: string;
   type?: string;
   autoComplete?: string;
   required?: boolean;
+  defaultValue?: string;
 }) {
   return (
     <div>
@@ -53,6 +56,7 @@ function FormField({
         type={type}
         autoComplete={autoComplete}
         required={required}
+        defaultValue={defaultValue}
         className="field-control"
       />
     </div>
@@ -90,6 +94,9 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
         autoComplete="current-password"
       />
       <FormFeedback state={state} />
+      {state.resendEmail ? (
+        <ResendConfirmationForm initialEmail={state.resendEmail} />
+      ) : null}
       <SubmitButton disabled={pending}>
         {pending ? "Iniciando sesión…" : "Iniciar sesión"}
       </SubmitButton>
@@ -127,6 +134,9 @@ export function RegistrationForm() {
         autoComplete="new-password"
       />
       <FormFeedback state={state} />
+      {state.resendAvailable && state.resendEmail ? (
+        <ResendConfirmationForm initialEmail={state.resendEmail} />
+      ) : null}
       <SubmitButton disabled={pending}>
         {pending ? "Creando cuenta…" : "Crear cuenta"}
       </SubmitButton>
@@ -135,6 +145,60 @@ export function RegistrationForm() {
         <Link href="/login" className="text-cyan-300 hover:text-cyan-200">
           Inicia sesión
         </Link>
+      </p>
+    </form>
+  );
+}
+
+export function ResendConfirmationForm({ initialEmail }: { initialEmail: string }) {
+  const [cooldown, setCooldown] = useState(0);
+  const [state, serverAction, pending] = useActionState(
+    async (previous: AuthActionState, formData: FormData) => {
+      const result = await resendSignupConfirmationAction(previous, formData);
+      if (
+        result.success ||
+        result.error?.toLowerCase().includes("límite de correos")
+      ) {
+        setCooldown(60);
+      }
+      return result;
+    },
+    initialState,
+  );
+  const cooldownActive = cooldown > 0;
+  useEffect(() => {
+    if (!cooldownActive) return;
+    const timer = window.setInterval(
+      () => setCooldown((remaining) => Math.max(remaining - 1, 0)),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, [cooldownActive]);
+
+  return (
+    <form action={serverAction} className="space-y-3 rounded-xl border border-white/10 bg-white/[0.025] p-4">
+      <p className="text-sm font-medium text-slate-200">¿No recibiste el correo?</p>
+      <FormField
+        id="email"
+        label="Correo para reenviar la confirmación"
+        type="email"
+        autoComplete="email"
+        defaultValue={initialEmail}
+      />
+      <FormFeedback state={state} />
+      <button
+        type="submit"
+        disabled={pending || cooldown > 0}
+        className="button-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {pending
+          ? "Solicitando…"
+          : cooldown > 0
+            ? `Reenviar en ${cooldown} s`
+            : "Reenviar confirmación"}
+      </button>
+      <p className="text-xs leading-5 text-slate-400">
+        Supabase limita los reenvíos; espera al menos 60 segundos entre solicitudes.
       </p>
     </form>
   );
