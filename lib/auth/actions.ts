@@ -5,7 +5,6 @@ import {
   isAuthRetryableFetchError,
 } from "@supabase/supabase-js";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedProfileRole } from "@/lib/auth/identity";
@@ -13,9 +12,9 @@ import { getAuthenticatedDestination, getSafeNextPath } from "@/lib/auth/redirec
 import {
   isContactSubmissionConfigured,
   getContactSubmissionConfigurationIssues,
-  insertPublicContactMessage,
   protectContactSubmission,
 } from "@/lib/contact/server";
+import { submitContactToGoogleAppsScript } from "@/lib/contact/google-apps-script";
 import { getConfiguredSiteUrl } from "@/lib/site-url";
 
 export type AuthActionState = {
@@ -482,27 +481,19 @@ export async function sendContactMessageAction(
     };
   }
 
-  const result = await insertPublicContactMessage({
+  const forwarded = await submitContactToGoogleAppsScript({
     name: parsed.data.name,
     email: parsed.data.email.toLowerCase(),
-    phone: parsed.data.phone || null,
+    phone: parsed.data.phone,
     subject: parsed.data.subject,
     message: parsed.data.message,
   });
-  if (!result.success) {
-    console.error(
-      `Unable to save contact message. Supabase result: ${result.reason}; code: ${result.code ?? "none"}.`,
-    );
+  if (!forwarded) {
     return {
-      error:
-        result.reason === "connection"
-          ? "No se pudo conectar con el servicio de almacenamiento. Inténtalo más tarde."
-          : result.reason === "configuration"
-            ? "El almacenamiento del formulario no está configurado correctamente. Contacta al administrador del sitio."
-            : "No se pudo guardar el mensaje. Inténtalo nuevamente más tarde.",
+      error: "No se pudo enviar el mensaje. Inténtalo nuevamente más tarde.",
     };
   }
-  revalidatePath("/admin/mensajes");
+
   return { success: "Gracias. Tu mensaje fue enviado correctamente." };
 }
 

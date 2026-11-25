@@ -61,7 +61,7 @@ export default function ContactForm({
 
   return (
     <form action={action} className="space-y-5">
-      {enabled ? (
+      {enabled && turnstileSiteKey ? (
         <>
           <Script
             src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
@@ -70,15 +70,7 @@ export default function ContactForm({
           />
           <div ref={captchaContainer} />
         </>
-      ) : (
-        <p
-          className="rounded-xl border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100"
-          role="status"
-        >
-          El formulario está temporalmente fuera de servicio. Puedes contactarme
-          por WhatsApp o volver a intentarlo más tarde.
-        </p>
-      )}
+      ) : null}
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="contact-name" className="mb-2 block text-sm font-medium text-slate-200">

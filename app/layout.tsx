@@ -5,6 +5,7 @@ import type { Viewport } from "next";
 import { getPublicSiteSettings } from "@/lib/site-settings";
 import PwaControls from "@/components/pwa/PwaControls";
 import WhatsAppButton from "@/components/contact/WhatsAppButton";
+import AppSplash from "@/components/splash/AppSplash";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -60,11 +61,13 @@ export default function RootLayout({
       className="antialiased"
     >
       <body className="min-h-screen">
-        {children}
-        <PwaControls />
-        <Suspense fallback={null}>
-          <WhatsAppButton />
-        </Suspense>
+        <AppSplash>
+          {children}
+          <PwaControls />
+          <Suspense fallback={null}>
+            <WhatsAppButton />
+          </Suspense>
+        </AppSplash>
       </body>
     </html>
   );

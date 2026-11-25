@@ -13,7 +13,7 @@ export default function Navbar({ siteTitle }: { siteTitle: string }) {
     { href: "/#servicios", label: "Servicios" },
     { href: "/servicios-digitales", label: "Servicios digitales" },
     { href: "/proyectos", label: "Proyectos" },
-    { href: "/citas", label: "Citas" },
+    { href: "/citas", label: "Agendar citas" },
   ];
 
   return (

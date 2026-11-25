@@ -3,13 +3,12 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { isIP } from "node:net";
 import { headers } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
-import { getSupabaseConfig } from "@/lib/supabase/config";
 import { getConfiguredSiteUrl } from "@/lib/site-url";
-import type { Database } from "@/types/database";
+import { getGoogleAppsScriptContactUrl } from "@/lib/contact/google-apps-script";
 
 const CONTACT_RATE_LIMIT = 4;
 const CONTACT_RATE_WINDOW_SECONDS = 600;
+const localContactRateLimits = new Map<string, { count: number; expiresAt: number }>();
 
 const contactRateLimitScript = `
 local count = redis.call("INCR", KEYS[1])
@@ -26,30 +25,15 @@ type TurnstileResponse = {
 };
 
 export function getContactSubmissionConfigurationIssues(): string[] {
-  const requiredSettings = [
-    "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
-    "TURNSTILE_SECRET_KEY",
-    "UPSTASH_REDIS_REST_URL",
-    "UPSTASH_REDIS_REST_TOKEN",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "NEXT_PUBLIC_SUPABASE_URL",
-    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-  ];
-  const issues = requiredSettings.filter(
-    (name) => !process.env[name]?.trim(),
-  );
-
-  if (!getConfiguredSiteUrl()) {
-    issues.push("NEXT_PUBLIC_SITE_URL (valid HTTPS URL; HTTP localhost in development)");
+  const issues: string[] = [];
+  if (!getGoogleAppsScriptContactUrl()) {
+    issues.push("GOOGLE_APPS_SCRIPT_CONTACT_URL (valid Apps Script /exec URL)");
   }
 
-  const config = getSupabaseConfig();
-  if (
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() &&
-    !config
-  ) {
-    issues.push("NEXT_PUBLIC_SUPABASE_URL (invalid URL)");
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
+  const turnstileSecretKey = process.env.TURNSTILE_SECRET_KEY?.trim();
+  if (turnstileSiteKey && turnstileSecretKey && !getConfiguredSiteUrl()) {
+    issues.push("NEXT_PUBLIC_SITE_URL (valid URL for Turnstile verification)");
   }
 
   const redisUrl = process.env.UPSTASH_REDIS_REST_URL?.trim();
@@ -75,7 +59,7 @@ export function getContactSubmissionConfigurationIssues(): string[] {
 }
 
 export function isContactSubmissionConfigured(): boolean {
-  return getContactSubmissionConfigurationIssues().length === 0;
+  return getGoogleAppsScriptContactUrl() !== null;
 }
 
 export function getContactFormAvailability(): {
@@ -84,11 +68,16 @@ export function getContactFormAvailability(): {
   configurationIssues: string[];
 } {
   const configurationIssues = getContactSubmissionConfigurationIssues();
-  const enabled = configurationIssues.length === 0;
+  const enabled = getGoogleAppsScriptContactUrl() !== null;
+  const hasTurnstile = Boolean(
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() &&
+    process.env.TURNSTILE_SECRET_KEY?.trim() &&
+    getConfiguredSiteUrl(),
+  );
   return {
     enabled,
     configurationIssues,
-    turnstileSiteKey: enabled
+    turnstileSiteKey: hasTurnstile
       ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? ""
       : "",
   };
@@ -210,6 +199,24 @@ async function consumeDistributedRateLimit(
   }
 }
 
+function consumeLocalRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const key = createHash("sha256").update(ip).digest("hex");
+  let entry = localContactRateLimits.get(key);
+  if (!entry || entry.expiresAt <= now) {
+    entry = { count: 0, expiresAt: now + CONTACT_RATE_WINDOW_SECONDS * 1000 };
+    localContactRateLimits.set(key, entry);
+  }
+  entry.count += 1;
+
+  if (localContactRateLimits.size > 2048) {
+    for (const [storedKey, storedEntry] of localContactRateLimits) {
+      if (storedEntry.expiresAt <= now) localContactRateLimits.delete(storedKey);
+    }
+  }
+  return entry.count <= CONTACT_RATE_LIMIT;
+}
+
 export async function protectContactSubmission(
   token: string,
 ): Promise<
@@ -219,83 +226,26 @@ export async function protectContactSubmission(
   | "unavailable"
   | "configuration-error"
 > {
-  if (!isContactSubmissionConfigured()) return "configuration-error";
+  if (!getGoogleAppsScriptContactUrl()) return "configuration-error";
 
-  const captcha = await verifyTurnstile(token);
-  if (captcha !== "verified") return captcha;
-
-  const ip = getClientIp(await headers());
-  if (!ip) return "unavailable";
-
-  const limit = await consumeDistributedRateLimit(ip);
-  if (limit.status !== "allowed") return limit.status;
-  return limit.allowed ? "allowed" : "rate-limited";
-}
-
-export async function insertPublicContactMessage(message: {
-  name: string;
-  email: string;
-  phone: string | null;
-  subject: string;
-  message: string;
-}): Promise<
-  | { success: true }
-  | {
-      success: false;
-      reason: "configuration" | "connection" | "database";
-      code?: string;
-    }
-> {
-  const config = getSupabaseConfig();
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!isContactSubmissionConfigured() || !config || !serviceRoleKey) {
-    return { success: false, reason: "configuration" };
+  const hasTurnstile = Boolean(
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() &&
+    process.env.TURNSTILE_SECRET_KEY?.trim() &&
+    getConfiguredSiteUrl(),
+  );
+  if (hasTurnstile) {
+    const captcha = await verifyTurnstile(token);
+    if (captcha !== "verified") return captcha;
   }
 
-  const supabase = createClient<Database>(config.url.trim(), serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-      persistSession: false,
-    },
-  });
-  let error;
-  try {
-    ({ error } = await supabase.from("contact_messages").insert({
-      ...message,
-      status: "NUEVO",
-    }));
-  } catch (connectionError) {
-    console.error(
-      `Supabase contact insert connection failed. Error type: ${connectionError instanceof Error ? connectionError.name : "unknown"}.`,
-    );
-    return { success: false, reason: "connection" };
+  const ip = getClientIp(await headers()) ?? "unknown-client";
+
+  const endpoint = process.env.UPSTASH_REDIS_REST_URL?.trim();
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  if (endpoint && redisToken) {
+    const limit = await consumeDistributedRateLimit(ip);
+    if (limit.status !== "allowed") return limit.status;
+    return limit.allowed ? "allowed" : "rate-limited";
   }
-  if (error) {
-    const code =
-      "code" in error && typeof error.code === "string"
-        ? error.code
-        : undefined;
-    if (
-      error.name === "FetchError" ||
-      code === "FETCH_ERROR" ||
-      ("status" in error &&
-        typeof error.status === "number" &&
-        error.status >= 500)
-    ) {
-      return { success: false, reason: "connection", code };
-    }
-    if (
-      code === "42P01" ||
-      code === "42501" ||
-      code === "PGRST205" ||
-      code === "PGRST301" ||
-      code === "401" ||
-      code === "403"
-    ) {
-      return { success: false, reason: "configuration", code };
-    }
-    return { success: false, reason: "database", code };
-  }
-  return { success: true };
+  return consumeLocalRateLimit(ip) ? "allowed" : "rate-limited";
 }

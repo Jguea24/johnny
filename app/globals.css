@@ -50,6 +50,188 @@ video {
   color: #fff;
 }
 
+.app-entry-content--ready {
+  animation: app-content-enter 520ms cubic-bezier(.2, .75, .25, 1) both;
+}
+
+.app-splash {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgb(10 104 173 / .28), transparent 34rem),
+    linear-gradient(145deg, #030b1b 0%, #071a35 54%, #082a50 100%);
+  color: #f8fafc;
+  opacity: 1;
+  transition: opacity 480ms ease, visibility 480ms ease;
+  visibility: visible;
+}
+
+.app-splash::before,
+.app-splash::after {
+  position: absolute;
+  z-index: -1;
+  width: min(74vw, 40rem);
+  aspect-ratio: 1;
+  border: 1px solid rgb(50 173 221 / .09);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.app-splash::before {
+  transform: scale(.78);
+  box-shadow: 0 0 100px rgb(12 123 194 / .08), inset 0 0 90px rgb(12 123 194 / .05);
+}
+
+.app-splash::after {
+  width: min(92vw, 50rem);
+  border-color: rgb(50 173 221 / .045);
+}
+
+.app-splash--exiting {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.app-splash__content {
+  display: flex;
+  width: min(100% - 2rem, 25rem);
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.app-splash__logo-wrap {
+  display: grid;
+  width: clamp(6.5rem, 22vw, 8rem);
+  aspect-ratio: 1;
+  margin-bottom: 1.25rem;
+  place-items: center;
+  animation: app-logo-appear 760ms cubic-bezier(.16, 1, .3, 1) both, app-logo-glow 2.8s ease-in-out 760ms infinite alternate;
+}
+
+.app-splash__logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 18px rgb(34 211 238 / .32));
+}
+
+.app-splash__brand {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(1.45rem, 5vw, 1.8rem);
+  font-weight: 700;
+  letter-spacing: -.035em;
+}
+
+.app-splash__tagline {
+  margin: .35rem 0 0;
+  color: #8edcf0;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.app-splash__loading {
+  display: flex;
+  min-height: 1.5rem;
+  align-items: baseline;
+  margin: 2rem 0 1rem;
+  color: #c1d0e1;
+  font-size: .9rem;
+}
+
+.app-splash__dots {
+  display: inline-flex;
+  width: 1.1rem;
+  justify-content: flex-start;
+  color: #43d5ed;
+}
+
+.app-splash__dots span {
+  animation: app-loading-dot 1s ease-in-out infinite;
+  opacity: .25;
+}
+
+.app-splash__dots span:nth-child(2) { animation-delay: 150ms; }
+.app-splash__dots span:nth-child(3) { animation-delay: 300ms; }
+
+.app-splash__progress {
+  width: min(15rem, 66vw);
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(175 207 230 / .14);
+}
+
+.app-splash__progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #13b8dc, #6ce5f3);
+  box-shadow: 0 0 12px rgb(34 211 238 / .45);
+  animation: app-progress-fill 2s cubic-bezier(.22, .7, .2, 1) forwards;
+}
+
+.app-splash--exiting .app-splash__progress span {
+  width: 100%;
+  animation: none;
+  transition: width 180ms ease-out;
+}
+
+@keyframes app-logo-appear {
+  from { opacity: 0; transform: scale(.78) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes app-logo-glow {
+  from { filter: drop-shadow(0 0 9px rgb(34 211 238 / .18)); }
+  to { filter: drop-shadow(0 0 24px rgb(34 211 238 / .38)); }
+}
+
+@keyframes app-loading-dot {
+  0%, 65%, 100% { opacity: .25; transform: translateY(0); }
+  32% { opacity: 1; transform: translateY(-3px); }
+}
+
+@keyframes app-progress-fill {
+  0% { width: 4%; }
+  65% { width: 68%; }
+  100% { width: 88%; }
+}
+
+@keyframes app-content-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-splash,
+  .app-splash *,
+  .app-splash::before,
+  .app-splash::after,
+  .app-entry-content--ready {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
+  .app-splash__logo-wrap { opacity: 1; transform: none; }
+  .app-splash__dots span { opacity: 1; transform: none; }
+  .app-splash__progress span { width: 100%; }
+}
+
 .auth-page {
   min-height: 100vh;
   padding: clamp(1rem, 2vw, 1.75rem);
