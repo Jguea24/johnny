@@ -45,9 +45,13 @@ export default function AppointmentBookingForm({
   );
   useEffect(() => {
     if (state.appointmentId) {
-      router.push(`/citas/${state.appointmentId}`);
+      const timeout = window.setTimeout(
+        () => router.push(`/citas/${state.appointmentId}`),
+        state.notificationWarning ? 4500 : 2200,
+      );
+      return () => window.clearTimeout(timeout);
     }
-  }, [router, state.appointmentId]);
+  }, [router, state.appointmentId, state.notificationWarning]);
   const serviceSlots = slots.filter((slot) => slot.service_id === serviceId);
 
   if (services.length === 0) {
@@ -154,8 +158,13 @@ export default function AppointmentBookingForm({
           </p>
         ) : null}
         {state.success && state.appointmentId ? (
-          <div className="sm:col-span-2 rounded-lg border border-emerald-300/25 bg-emerald-300/[0.07] p-4 text-sm text-emerald-100" role="status">
-            <p>{state.success}</p>
+          <div className="sm:col-span-2 rounded-lg border border-emerald-300/25 bg-emerald-300/[0.07] p-4 text-sm text-emerald-100">
+            <p role="status">{state.success}</p>
+            {state.notificationWarning ? (
+              <p className="mt-2 rounded-md border border-amber-300/20 bg-amber-300/[0.08] p-3 text-amber-100" role="alert">
+                {state.notificationWarning}
+              </p>
+            ) : null}
             <Link className="mt-2 inline-block font-semibold underline underline-offset-4" href={`/citas/${state.appointmentId}`}>
               Ver detalle de la cita
             </Link>

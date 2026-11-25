@@ -5,12 +5,14 @@ import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin, getAuthenticatedUserId } from "@/lib/auth/identity";
 import { createClient } from "@/lib/supabase/server";
+import { sendAppointmentConfirmation } from "@/lib/appointments/notifications";
 import type { AppointmentStatus } from "@/types/database";
 
 export type AppointmentActionState = {
   error?: string;
   success?: string;
   appointmentId?: string;
+  notificationWarning?: string;
 };
 
 function field(formData: FormData, name: string): string {
@@ -127,11 +129,29 @@ export async function createAppointmentAction(
     return { error: appointmentError(error) };
   }
 
+  const notificationStatus = await sendAppointmentConfirmation({
+    id: data.id,
+    name: parsed.data.customer_name,
+    email: parsed.data.customer_email.toLowerCase(),
+    serviceTitle: available.service.title,
+    startsAt: available.slot.starts_at,
+    endsAt: available.slot.ends_at,
+    timeZone: available.slot.time_zone,
+  });
+
   revalidatePath("/citas/mis-citas");
   revalidatePath("/admin/citas");
   return {
     success: "Tu solicitud de cita quedó registrada.",
     appointmentId: data.id,
+    ...(notificationStatus === "sent"
+      ? {}
+      : {
+          notificationWarning:
+            notificationStatus === "not-configured"
+              ? "La cita se guardó, pero el correo de aviso aún no está configurado."
+              : "La cita se guardó, pero no se pudo enviar el correo de aviso. Puedes consultar los datos en Mis citas.",
+        }),
   };
 }
 
