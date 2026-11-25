@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Agendar cita" };
 export const instant = false;
 
 export default async function AgendarCitaPage() {
-  const userId = await getAuthenticatedUserId();
+  const userId = await getAuthenticatedUserId("/citas/agendar");
   const supabase = await createClient();
   const [servicesResult, slotsResult, profileResult] = await Promise.all([
     supabase
@@ -21,7 +21,7 @@ export default async function AgendarCitaPage() {
       .eq("active", true)
       .gt("starts_at", new Date().toISOString())
       .order("starts_at", { ascending: true })
-      .limit(200),
+      .limit(1000),
     supabase
       .from("profiles")
       .select("full_name,email,phone")

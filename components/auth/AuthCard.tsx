@@ -13,21 +13,36 @@ export default function AuthCard({
   children: ReactNode;
 }) {
   return (
-    <main className="flex min-h-screen items-center bg-transparent px-4 py-10 text-white sm:px-6 sm:py-16">
-      <div className="mx-auto max-w-md">
-        <Link
-          href="/"
-          className="text-lg font-bold tracking-tight text-white"
-        >
-          JOHNNY<span className="text-cyan-400">.</span>
-        </Link>
-        <section className="surface-card mt-8 p-5 sm:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-400">
-            {eyebrow}
-          </p>
-          <h1 className="mt-3 break-words text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
-          <p className="mt-3 mb-7 leading-6 text-slate-400">{description}</p>
+    <main className="auth-page">
+      <div className="auth-layout">
+        <section className="auth-brand" aria-label="Johnny Grefa Asesoría Tecnológica">
+          <Link href="/" className="auth-logo">
+            <span className="auth-logo-mark" aria-hidden="true">JG</span>
+            <span className="auth-logo-copy"><strong>Johnny <em>Grefa</em></strong><small>Asesoría Tecnológica</small></span>
+          </Link>
+          <div className="auth-brand-message">
+            <p className="auth-brand-kicker">ASESORÍA Y FORMACIÓN</p>
+            <h2>Tecnología útil para tus ideas y proyectos.</h2>
+            <div className="auth-services" aria-label="Áreas de servicio">
+              <span>Desarrollo de software</span>
+              <span>Datos y geotecnologías</span>
+              <span>Cursos y capacitación</span>
+            </div>
+          </div>
+          <p className="auth-brand-footer">Johnny Grefa <span>·</span> Asesoría Tecnológica</p>
+        </section>
+
+        <section className="auth-panel" aria-labelledby="auth-title">
+          <div className="auth-panel-heading">
+            <span className="auth-user-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="15" r="9"/><path d="M7 42v-4a13 13 0 0 1 13-13h8a13 13 0 0 1 13 13v4z"/></svg>
+            </span>
+            <p className="auth-eyebrow">{eyebrow}</p>
+            <h1 id="auth-title">{title}</h1>
+            <p>{description}</p>
+          </div>
           {children}
+          <p className="auth-access-note">Acceso seguro para clientes y administración</p>
         </section>
       </div>
     </main>

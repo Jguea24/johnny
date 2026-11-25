@@ -6,6 +6,7 @@ import {
 } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSafeNextPath } from "@/lib/auth/redirects";
 
 export type ProfileRoleResult =
   | { status: "authenticated"; userId: string; role: "ADMIN" | "USER" }
@@ -75,12 +76,15 @@ export async function getAuthenticatedProfileRole(
   return { status: "authenticated", userId, role: profile.role };
 }
 
-export async function getAuthenticatedUserId(): Promise<string> {
+export async function getAuthenticatedUserId(
+  returnTo = "/perfil",
+): Promise<string> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
   const id = data?.claims?.sub;
   if (error || typeof id !== "string") {
-    redirect("/login");
+    const nextPath = getSafeNextPath(returnTo) ?? "/perfil";
+    redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   }
   return id;
 }

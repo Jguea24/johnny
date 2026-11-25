@@ -34,7 +34,7 @@ async function LoginContent({
     <AuthCard
       eyebrow="Tu espacio"
       title="Iniciar sesión"
-      description="Accede a tu perfil y consulta tu información."
+      description="Accede a tus citas, cursos y servicios. El panel correspondiente a tu cuenta se abrirá automáticamente."
     >
       {errorCode === "callback" ? (
         <p

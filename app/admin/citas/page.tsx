@@ -16,12 +16,12 @@ export default async function AdminCitasPage() {
       .select("id,service_id,starts_at,ends_at,time_zone,active")
       .gte("starts_at", new Date().toISOString())
       .order("starts_at", { ascending: true })
-      .limit(200),
+      .limit(1000),
     supabase
       .from("appointments")
       .select("id,user_id,service_title,service_id,slot_id,starts_at,ends_at,time_zone,customer_name,customer_email,customer_phone,status,created_at,cancelled_at")
       .order("created_at", { ascending: false })
-      .limit(200),
+      .limit(1000),
   ]);
   const queryError = servicesResult.error ?? slotsResult.error ?? appointmentsResult.error;
   if (queryError) {

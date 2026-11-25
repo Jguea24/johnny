@@ -17,7 +17,7 @@ function FormFeedback({ state }: { state: AuthActionState }) {
   if (!state.error && !state.success) return null;
   return (
     <p
-      className={`rounded-xl border px-4 py-3 text-sm ${
+      className={`auth-feedback rounded-xl border px-4 py-3 text-sm ${
         state.error
           ? "border-rose-400/30 bg-rose-400/10 text-rose-200"
           : "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"

@@ -1,0 +1,121 @@
+.admin-shell {
+  background: #f3f6fc;
+}
+
+.admin-topbar {
+  box-shadow: 0 8px 24px rgb(16 35 68 / 0.05);
+}
+
+.admin-sidebar {
+  background:
+    radial-gradient(circle at 12% 95%, rgb(37 99 235 / 0.28), transparent 28%),
+    linear-gradient(165deg, #061a39 0%, #08244d 55%, #061936 100%);
+  box-shadow: 0 18px 40px rgb(7 25 56 / 0.16);
+}
+
+.admin-main {
+  color-scheme: light;
+  color: #172642;
+}
+
+.admin-main .section-eyebrow {
+  color: #2563eb !important;
+}
+
+.admin-main .admin-welcome .section-eyebrow,
+.admin-main .admin-welcome .text-white,
+.admin-main .admin-welcome .text-blue-50,
+.admin-main .admin-stat-card .text-white,
+.admin-main .admin-stat-card .text-slate-300,
+.admin-main .admin-stat-card .text-cyan-300 {
+  color: #fff !important;
+}
+
+.admin-main .admin-welcome .text-blue-100\/75 {
+  color: rgb(219 234 254 / 0.82) !important;
+}
+
+.admin-main .surface-card {
+  border-color: #e1e8f2 !important;
+  background: #fff !important;
+  box-shadow: 0 10px 28px rgb(21 43 77 / 0.07) !important;
+}
+
+.admin-main .text-white {
+  color: #132342 !important;
+}
+
+.admin-main .text-slate-100,
+.admin-main .text-slate-200,
+.admin-main .text-slate-300 {
+  color: #344765 !important;
+}
+
+.admin-main .text-slate-400,
+.admin-main .text-slate-500 {
+  color: #71809a !important;
+}
+
+.admin-main .text-cyan-300,
+.admin-main .text-cyan-200 {
+  color: #1d5ed8 !important;
+}
+
+.admin-main [class*="border-white/"] {
+  border-color: #dce5f1 !important;
+}
+
+.admin-main [class*="bg-white/"] {
+  background-color: #fff !important;
+}
+
+.admin-main [class*="bg-slate-950"],
+.admin-main [class*="bg-slate-900"],
+.admin-main [class*="bg-slate-800"] {
+  background-color: #f8faff !important;
+}
+
+.admin-main .field-control {
+  border-color: #d4deec !important;
+  background: #fff !important;
+  color: #172642 !important;
+  box-shadow: 0 1px 2px rgb(16 35 68 / 0.04);
+}
+
+.admin-main .field-control::placeholder {
+  color: #8997ac !important;
+}
+
+.admin-main .button-primary {
+  background: linear-gradient(110deg, #1685ef, #0751c5) !important;
+  color: #fff !important;
+  box-shadow: 0 7px 16px rgb(13 91 204 / 0.16);
+}
+
+.admin-main .button-primary:hover {
+  background: linear-gradient(110deg, #0877e4, #0647ac) !important;
+}
+
+.admin-main .button-secondary {
+  border-color: #d8e2ef !important;
+  background: #fff !important;
+  color: #344765 !important;
+}
+
+.admin-main .admin-panel-card {
+  border: 1px solid #e1e8f2;
+  border-radius: 1.1rem;
+  background: #fff;
+  box-shadow: 0 10px 28px rgb(21 43 77 / 0.07);
+}
+
+.admin-signout:hover {
+  box-shadow: 0 4px 12px rgb(37 99 235 / 0.1);
+}
+
+@media (max-width: 1023px) {
+  .admin-sidebar {
+    background: transparent;
+    box-shadow: none;
+  }
+}

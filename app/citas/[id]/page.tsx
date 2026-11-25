@@ -21,10 +21,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function DetalleCitaPage({ params }: PageProps) {
-  const [{ id }, userId] = await Promise.all([params, getAuthenticatedUserId()]);
+  const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
     notFound();
   }
+  const userId = await getAuthenticatedUserId(`/citas/${id}`);
 
   const supabase = await createClient();
   const { data: appointment, error } = await supabase
@@ -48,7 +49,7 @@ export default async function DetalleCitaPage({ params }: PageProps) {
           .eq("active", true)
           .gt("starts_at", new Date().toISOString())
           .order("starts_at", { ascending: true })
-          .limit(100)
+          .limit(1000)
       : Promise.resolve({ data: [] as AppointmentSlotOption[], error: null })
   );
   if (slotsResult.error) {

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { ReactNode } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { requireAdmin } from "@/lib/auth/identity";
+import "./admin.css";
 
 export const instant = false;
 
@@ -22,7 +23,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <Suspense
       fallback={
         <main
-          className="min-h-screen bg-slate-950 px-4 py-16 text-center text-slate-300 sm:px-6 sm:py-24"
+          className="min-h-screen bg-slate-50 px-4 py-16 text-center text-slate-700 sm:px-6 sm:py-24"
           aria-busy="true"
         >
           Verificando acceso administrativo…

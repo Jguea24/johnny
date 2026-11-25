@@ -287,6 +287,196 @@ export async function createAppointmentSlotAction(
   return { success: "Horario publicado." };
 }
 
+const dateRangeSlotBatchSchema = z.array(z.object({
+  starts_at: z.string().datetime(),
+  ends_at: z.string().datetime(),
+})).min(1).max(868);
+
+export async function createAppointmentSlotsForDateRangeAction(
+  _previous: AppointmentActionState,
+  formData: FormData,
+): Promise<AppointmentActionState> {
+  let admin;
+  try {
+    admin = await requireAdmin();
+  } catch (error) {
+    unstable_rethrow(error);
+    return { error: "No se pudo verificar tu acceso administrativo." };
+  }
+
+  const serviceId = z.string().uuid().safeParse(field(formData, "service_id"));
+  const startDate = field(formData, "start_date");
+  const endDate = field(formData, "end_date");
+  const timeZone = field(formData, "time_zone");
+  const replaceOutsideRange = field(formData, "replace_outside_range") === "on";
+  let rawSlots: unknown;
+  try {
+    rawSlots = JSON.parse(field(formData, "slots_json"));
+  } catch {
+    return { error: "No se pudo preparar la disponibilidad. Revisa los datos e inténtalo otra vez." };
+  }
+  const parsedSlots = dateRangeSlotBatchSchema.safeParse(rawSlots);
+  if (!serviceId.success || !parsedSlots.success || !isValidTimeZone(timeZone)) {
+    return { error: "Revisa los días, las horas y la zona horaria seleccionados." };
+  }
+
+  const startDateTime = Date.parse(`${startDate}T00:00:00Z`);
+  const endDateTime = Date.parse(`${endDate}T00:00:00Z`);
+  const dayCount = (endDateTime - startDateTime) / 86400000;
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(endDate) ||
+    !Number.isFinite(dayCount) ||
+    dayCount < 0 ||
+    dayCount > 30 ||
+    new Date(startDateTime).toISOString().slice(0, 10) !== startDate ||
+    new Date(endDateTime).toISOString().slice(0, 10) !== endDate
+  ) {
+    return { error: "Selecciona un rango válido de hasta 31 días." };
+  }
+
+  const now = Date.now();
+  const slots = parsedSlots.data.map((slot) => ({
+    starts_at: new Date(slot.starts_at).toISOString(),
+    ends_at: new Date(slot.ends_at).toISOString(),
+  }));
+  const localDateFormatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  if (slots.some((slot) =>
+    new Date(slot.starts_at).getTime() <= now ||
+    new Date(slot.ends_at).getTime() - new Date(slot.starts_at).getTime() !== 60 * 60 * 1000 ||
+    localDateFormatter.format(new Date(slot.starts_at)) < startDate ||
+    localDateFormatter.format(new Date(slot.starts_at)) > endDate
+  )) {
+    return { error: "Los bloques deben ser futuros, durar 60 minutos y estar dentro del rango elegido." };
+  }
+
+  const uniqueStarts = new Set(slots.map((slot) => slot.starts_at));
+  if (uniqueStarts.size !== slots.length) {
+    return { error: "La disponibilidad contiene horarios repetidos." };
+  }
+
+  const { data: service, error: serviceError } = await admin.supabase
+    .from("services")
+    .select("id")
+    .eq("id", serviceId.data)
+    .eq("status", "ACTIVE")
+    .maybeSingle();
+  if (serviceError) {
+    logAppointmentError("Date-range appointment service lookup", serviceError);
+    return { error: "No se pudo comprobar el servicio." };
+  }
+  if (!service) return { error: "Solo se pueden publicar horarios para servicios activos." };
+
+  const startRange = slots.reduce((earliest, slot) =>
+    slot.starts_at < earliest ? slot.starts_at : earliest, slots[0].starts_at);
+  const endRange = slots.reduce((latest, slot) =>
+    slot.ends_at > latest ? slot.ends_at : latest, slots[0].ends_at);
+  const [{ data: existingSlots, error: slotsError }, { data: appointments, error: appointmentsError }] =
+    await Promise.all([
+      admin.supabase
+        .from("appointment_slots")
+        .select("starts_at,ends_at")
+        .eq("active", true)
+        .lt("starts_at", endRange)
+        .gt("ends_at", startRange),
+      admin.supabase
+        .from("appointments")
+        .select("starts_at,ends_at")
+        .in("status", ["PENDING", "CONFIRMED"])
+        .lt("starts_at", endRange)
+        .gt("ends_at", startRange),
+    ]);
+  const queryError = slotsError ?? appointmentsError;
+  if (queryError) {
+    logAppointmentError("Date-range appointment availability lookup", queryError);
+    return { error: "No se pudo revisar la disponibilidad existente." };
+  }
+
+  const availableSlots = slots.filter((slot) => {
+    const start = new Date(slot.starts_at).getTime();
+    const end = new Date(slot.ends_at).getTime();
+    const alreadyPublished = (existingSlots ?? []).some((existingSlot) =>
+      start < new Date(existingSlot.ends_at).getTime() &&
+      end > new Date(existingSlot.starts_at).getTime(),
+    );
+    const alreadyBooked = (appointments ?? []).some((appointment) =>
+      start < new Date(appointment.ends_at).getTime() &&
+      end > new Date(appointment.starts_at).getTime(),
+    );
+    return !alreadyPublished && !alreadyBooked;
+  });
+
+  if (!availableSlots.length) {
+    if (!existingSlots?.length) {
+      return { error: "No hay bloques nuevos disponibles en el rango de fechas seleccionado." };
+    }
+  }
+
+  if (availableSlots.length) {
+    const { error } = await admin.supabase.from("appointment_slots").insert(
+      availableSlots.map((slot) => ({
+        service_id: serviceId.data,
+        starts_at: slot.starts_at,
+        ends_at: slot.ends_at,
+        time_zone: timeZone,
+        created_by: admin.profile.id,
+      })),
+    );
+    if (error) {
+      logAppointmentError("Date-range appointment slot creation", error);
+      return { error: "No se pudieron publicar los bloques. Comprueba que sigan disponibles." };
+    }
+  }
+
+  let pausedOutsideRange = 0;
+  if (replaceOutsideRange) {
+    const { data: futureServiceSlots, error: futureSlotsError } = await admin.supabase
+      .from("appointment_slots")
+      .select("id,starts_at")
+      .eq("service_id", serviceId.data)
+      .eq("active", true)
+      .gt("starts_at", new Date().toISOString())
+      .limit(1000);
+    if (futureSlotsError) {
+      logAppointmentError("Date-range outside slot lookup", futureSlotsError);
+      return { error: "Se publicaron los horarios del rango, pero no se pudo actualizar la disponibilidad fuera de él." };
+    }
+
+    const outsideSlotIds = (futureServiceSlots ?? [])
+      .filter((slot) => {
+        const date = localDateFormatter.format(new Date(slot.starts_at));
+        return date < startDate || date > endDate;
+      })
+      .map((slot) => slot.id);
+    if (outsideSlotIds.length) {
+      const { error } = await admin.supabase
+        .from("appointment_slots")
+        .update({ active: false })
+        .in("id", outsideSlotIds);
+      if (error) {
+        logAppointmentError("Date-range outside slot pause", error);
+        return { error: "Se publicaron los horarios del rango, pero no se pudo pausar la disponibilidad fuera de él." };
+      }
+      pausedOutsideRange = outsideSlotIds.length;
+    }
+  }
+
+  revalidatePath("/admin/citas");
+  revalidatePath("/citas/agendar");
+  const publicationMessage = availableSlots.length
+    ? `Se publicaron ${availableSlots.length} nuevos horarios de 60 minutos.`
+    : "La disponibilidad del rango ya estaba publicada; no se duplicaron horarios.";
+  const pauseMessage = pausedOutsideRange
+    ? ` Se pausaron ${pausedOutsideRange} horarios futuros fuera del rango.`
+    : "";
+  return { success: `${publicationMessage}${pauseMessage}` };
+}
+
 export async function setAppointmentSlotActiveAction(
   _previous: AppointmentActionState,
   formData: FormData,

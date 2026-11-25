@@ -14,7 +14,7 @@ const statusLabels = {
 } as const;
 
 export default async function MisCitasPage() {
-  const userId = await getAuthenticatedUserId();
+  const userId = await getAuthenticatedUserId("/citas/mis-citas");
   const supabase = await createClient();
   const { data: appointments, error } = await supabase
     .from("appointments")
@@ -33,6 +33,9 @@ export default async function MisCitasPage() {
         <p className="section-eyebrow">Tu cuenta</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Mis citas</h1>
         <p className="mt-3 text-sm leading-6 text-slate-400">Aquí solo aparecen las reservas asociadas a tu cuenta.</p>
+        <Link href="/citas/agendar" className="button-primary mt-5 inline-flex min-h-11 items-center justify-center px-5">
+          Agendar otra cita
+        </Link>
       </header>
       {!appointments?.length ? (
         <section className="surface-card p-6">

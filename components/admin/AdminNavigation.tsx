@@ -97,7 +97,7 @@ function NavigationLinks({ pathname, onNavigate }: { pathname: string; onNavigat
     <>
       {groups.map((group) => (
         <section key={group.label} className="space-y-1">
-          <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="px-3 pb-1 pt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-200/55">
             {group.label}
           </p>
           {group.items.map((item) => {
@@ -108,15 +108,15 @@ function NavigationLinks({ pathname, onNavigate }: { pathname: string; onNavigat
                 href={item.href}
                 onClick={onNavigate}
                 aria-current={current ? "page" : undefined}
-                className={`flex min-h-11 items-center gap-3 rounded-xl border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
+                className={`flex min-h-11 items-center gap-3 rounded-xl border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 ${
                   current
-                    ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-100"
-                    : "border-transparent text-slate-400 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
+                    ? "border-blue-400/20 bg-blue-500 text-white shadow-lg shadow-blue-950/25"
+                    : "border-transparent text-blue-100/75 hover:border-white/10 hover:bg-white/[0.07] hover:text-white"
                 }`}
               >
                 <NavigationIcon name={item.icon} />
                 <span>{item.label}</span>
-                {current ? <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-300" aria-hidden="true" /> : null}
+                {current ? <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white" aria-hidden="true" /> : null}
               </Link>
             );
           })}
@@ -125,7 +125,7 @@ function NavigationLinks({ pathname, onNavigate }: { pathname: string; onNavigat
       <Link
         href="/"
         onClick={onNavigate}
-        className="mt-2 flex min-h-11 items-center gap-3 rounded-xl border border-white/10 px-3 text-sm text-slate-400 transition hover:border-cyan-300/25 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+        className="mt-5 flex min-h-11 items-center gap-3 rounded-xl border border-white/10 px-3 text-sm text-blue-100/70 transition hover:border-blue-300/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
       >
         <span aria-hidden="true" className="flex h-[18px] w-[18px] items-center justify-center text-xs">↗</span>
         Ver sitio público
@@ -134,13 +134,17 @@ function NavigationLinks({ pathname, onNavigate }: { pathname: string; onNavigat
   );
 }
 
-export default function AdminNavigation() {
+export default function AdminNavigation({
+  variant = "all",
+}: {
+  variant?: "all" | "desktop" | "mobile";
+}) {
   const pathname = usePathname();
   const currentSection = groups.flatMap((group) => group.items).find((item) => isCurrent(pathname, item.href));
 
   return (
-    <aside className="min-w-0">
-      <details id="admin-mobile-navigation" className="group lg:hidden">
+    <aside className={`min-w-0 ${variant === "desktop" ? "hidden lg:block" : variant === "mobile" ? "lg:hidden" : ""}`}>
+      <details id="admin-mobile-navigation" className={`group ${variant === "all" ? "lg:hidden" : variant === "desktop" ? "hidden" : "relative"}`}>
         <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between rounded-xl border border-white/10 bg-slate-900/90 px-4 text-sm font-medium text-slate-200 shadow-lg shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 [&::-webkit-details-marker]:hidden">
           <span className="flex items-center gap-3">
             <NavigationIcon name={currentSection?.icon ?? "overview"} />
@@ -150,14 +154,14 @@ export default function AdminNavigation() {
             <path d="m5 7 5 5 5-5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </summary>
-        <nav aria-label="Navegación administrativa" className="mt-2 max-h-[calc(100dvh-8rem)] overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/98 p-2 shadow-xl shadow-black/30">
+        <nav aria-label="Navegación administrativa" className="absolute right-0 z-50 mt-2 max-h-[calc(100dvh-8rem)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-white/10 bg-[#061b3c] p-2 shadow-xl shadow-black/30">
           <NavigationLinks pathname={pathname} onNavigate={() => {
             const details = document.getElementById("admin-mobile-navigation");
             if (details instanceof HTMLDetailsElement) details.open = false;
           }} />
         </nav>
       </details>
-      <nav aria-label="Navegación administrativa" className="hidden rounded-2xl border border-white/10 bg-white/[0.025] p-2 lg:block">
+      <nav aria-label="Navegación administrativa" className={variant === "all" ? "hidden lg:block" : variant === "mobile" ? "hidden" : "min-w-0"}>
         <NavigationLinks pathname={pathname} />
       </nav>
     </aside>

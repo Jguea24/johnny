@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createAppointmentAction } from "@/lib/appointments/actions";
 import type { AppointmentActionState } from "@/lib/appointments/actions";
 
@@ -37,10 +38,16 @@ export default function AppointmentBookingForm({
   customer: { name: string; email: string; phone: string };
 }) {
   const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
+  const router = useRouter();
   const [state, action, pending] = useActionState<AppointmentActionState, FormData>(
     createAppointmentAction,
     {},
   );
+  useEffect(() => {
+    if (state.appointmentId) {
+      router.push(`/citas/${state.appointmentId}`);
+    }
+  }, [router, state.appointmentId]);
   const serviceSlots = slots.filter((slot) => slot.service_id === serviceId);
 
   if (services.length === 0) {
