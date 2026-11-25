@@ -2,11 +2,14 @@ import "server-only";
 
 export function getConfiguredSiteUrl(): URL | null {
   const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
   const value =
     configuredUrl ||
     (process.env.NODE_ENV === "development"
       ? "http://localhost:3000"
-      : "");
+      : vercelProductionUrl
+        ? `https://${vercelProductionUrl}`
+        : "");
   if (!value) return null;
 
   try {
